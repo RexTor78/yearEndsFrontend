@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Celebración</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>🎉 Celebración</h2>
+  <p>
+    ¡Acceso completado!  
+    Por favor, hagan una última foto celebrando su entrada a la villa.
+  </p>
+
+  <button id="finishBtn">Finalizar</button>
+</div>
+
+<!-- CARGAMOS EL JS -->
+<script src="js/navigation.js"></script>
+
+<script>
+  // AQUÍ está la instrucción clara de a dónde ir
+  document.getElementById("finishBtn").addEventListener("click", function () {
+    goTo("collage.html");
+  });
+</script>
+
+</body>
+</html>

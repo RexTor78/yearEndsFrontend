@@ -1,0 +1,58 @@
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #020617, #1e293b);
+  color: #f8fafc;
+  font-family: system-ui;
+  text-align: center;
+}
+
+h1 { margin: 16px 0; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding: 16px;
+}
+
+.center-collage {
+  background: rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.collage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
+  gap: 8px;
+}
+
+.collage-grid img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.families {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+  gap: 16px;
+}
+
+.family-card {
+  background: rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 12px;
+  position: relative;
+}
+
+.family-card h3 {
+  margin: 8px 0;
+}
+
+.arrow {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+}

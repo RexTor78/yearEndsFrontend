@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Verificación</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Verificación de productos</h2>
+  <p id="productsMessage"></p>
+  <p>Por favor, realicen una foto de los productos indicados.</p>
+<button id="photoBtn">📸 Hacer foto de los productos</button>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+
+  
+
+  <button onclick="next()">Continuar</button>
+</div>
+
+<script>
+function next() {
+  window.location.href = "uvas.html";
+}
+</script>
+
+</body>
+</html>

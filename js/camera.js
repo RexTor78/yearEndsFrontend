@@ -100,6 +100,48 @@ function askNextFamily() {
       "Disculpad el error. Probemos con otra identificación."
     );
     currentIndex++;
-    askNextFamily();
+    const modal = document.getElementById("familyModal");
+const modalText = document.getElementById("modalText");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
+
   }
+}
+function askNextFamily() {
+  if (currentIndex >= predictions.length) {
+    statusMessage.innerText =
+      "❌ No hemos podido identificar a vuestra familia. Disculpad las molestias.";
+    continueBtn.disabled = false;
+    return;
+  }
+
+  const candidate = predictions[currentIndex];
+
+  modalText.innerText = `Se ha detectado la familia ${candidate.family}. ¿Es correcto?`;
+  modal.classList.remove("hidden");
+
+  confirmYes.onclick = () => {
+    modal.classList.add("hidden");
+
+    sessionStorage.setItem("family", candidate.family);
+    sessionStorage.setItem(
+      "specialMessage",
+      candidate.special_message || ""
+    );
+
+    if (candidate.needs_products) {
+      window.location.href = "./pages/products.html";
+    } else {
+      window.location.href = "./pages/trivia.html";
+    }
+  };
+
+  confirmNo.onclick = () => {
+    modal.classList.add("hidden");
+
+    statusMessage.innerText =
+      "🙏 Disculpad el error, probamos con otra identificación...";
+    currentIndex++;
+    setTimeout(askNextFamily, 800);
+  };
 }

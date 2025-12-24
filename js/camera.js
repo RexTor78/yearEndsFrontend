@@ -8,14 +8,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const continueBtn = document.getElementById("continueBtn");
   const statusMessage = document.getElementById("statusMessage");
 
+  // Modal de confirmación
+  const familyModal = document.getElementById("familyModal");
+  const modalText = document.getElementById("modalText");
+  const confirmYes = document.getElementById("confirmYes");
+  const confirmNo = document.getElementById("confirmNo");
+
   let capturedFile = null;
+  let lastFamilyData = null;
 
-  // Abrir cámara
-  photoBtn.addEventListener("click", () => {
-    cameraInput.click();
-  });
+  // 🔹 Abrir cámara
+  photoBtn.addEventListener("click", () => cameraInput.click());
 
-  // Al hacer la foto
+  // 🔹 Al hacer la foto
   cameraInput.addEventListener("change", () => {
     const file = cameraInput.files[0];
     if (!file) return;
@@ -32,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsDataURL(file);
   });
 
-  // Enviar al backend
+  // 🔹 Enviar al backend
   continueBtn.addEventListener("click", async () => {
     if (!capturedFile) {
       statusMessage.innerText = "⚠️ Por favor, capture una foto primero.";
@@ -56,13 +61,30 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await response.json();
-      statusMessage.innerText = `✅ Foto subida correctamente: familia detectada - ${data.family || "N/A"}`;
-
-      // Guardar url de selfie
       sessionStorage.setItem("selfieUrl", data.url || "");
+      lastFamilyData = data;
 
-      // Aquí dejaremos para más adelante la lógica de confirmación
-      continueBtn.disabled = false;
+      // Mostrar modal de confirmación
+      modalText.innerText = `Se ha detectado la familia ${data.family}. ¿Es correcto?`;
+      familyModal.classList.remove("hidden");
+
+      // Botón Sí
+      confirmYes.onclick = () => {
+        familyModal.classList.add("hidden");
+        if (lastFamilyData.needs_products) {
+          window.location.href = "./pages/products.html";
+        } else {
+          window.location.href = "./pages/trivia.html";
+        }
+      };
+
+      // Botón No
+      confirmNo.onclick = () => {
+        familyModal.classList.add("hidden");
+        statusMessage.innerText =
+          "❌ Familia no reconocida. Intentaremos con la siguiente.";
+        continueBtn.disabled = false;
+      };
 
     } catch (error) {
       console.error(error);

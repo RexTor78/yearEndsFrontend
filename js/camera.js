@@ -7,13 +7,15 @@ const continueBtn = document.getElementById("continueBtn");
 const statusMessage = document.getElementById("statusMessage");
 
 let capturedFile = null;
+let predictions = [];
+let currentIndex = 0;
 
-// 🔹 Abrir cámara
+// Abrir cámara
 photoBtn.addEventListener("click", () => {
   cameraInput.click();
 });
 
-// 🔹 Al hacer la foto
+// Foto hecha
 cameraInput.addEventListener("change", () => {
   const file = cameraInput.files[0];
   if (!file) return;
@@ -29,7 +31,7 @@ cameraInput.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// 🔹 Enviar al backend
+// Enviar selfie
 continueBtn.addEventListener("click", async () => {
   if (!capturedFile) return;
 
@@ -46,33 +48,17 @@ continueBtn.addEventListener("click", async () => {
     });
 
     if (!response.ok) {
-      throw new Error("Error en backend");
+      throw new Error("Error backend");
     }
 
     const data = await response.json();
 
-    // Guardar datos
-    sessionStorage.setItem("family", data.family);
-    sessionStorage.setItem("requiredProducts", JSON.stringify(data.required_products || []));
-    sessionStorage.setItem("specialMessage", data.special_message || "");
+    predictions = data.predictions;
+    currentIndex = 0;
+
     sessionStorage.setItem("selfieUrl", data.url);
 
-    // Confirmación
-    const confirmFamily = confirm(
-      `Se ha detectado la familia ${data.family}. ¿Es correcto?`
-    );
-
-    if (confirmFamily) {
-      if (data.needs_products) {
-        window.location.href = "./pages/products.html";
-      } else {
-        window.location.href = "./pages/trivia.html";
-      }
-    } else {
-      statusMessage.innerText =
-        "❌ Entendido. Intentaremos con la siguiente familia.";
-      continueBtn.disabled = false;
-    }
+    askNextFamily();
 
   } catch (error) {
     console.error(error);
@@ -81,3 +67,39 @@ continueBtn.addEventListener("click", async () => {
     continueBtn.disabled = false;
   }
 });
+
+// Preguntar familias una a una
+function askNextFamily() {
+  if (currentIndex >= predictions.length) {
+    statusMessage.innerText =
+      "❌ No hemos podido identificar a vuestra familia. Disculpad las molestias.";
+    continueBtn.disabled = false;
+    return;
+  }
+
+  const candidate = predictions[currentIndex];
+
+  const confirmed = confirm(
+    `Se ha detectado la familia ${candidate.family}. ¿Es correcto?`
+  );
+
+  if (confirmed) {
+    sessionStorage.setItem("family", candidate.family);
+    sessionStorage.setItem(
+      "specialMessage",
+      candidate.special_message || ""
+    );
+
+    if (candidate.needs_products) {
+      window.location.href = "./pages/products.html";
+    } else {
+      window.location.href = "./pages/trivia.html";
+    }
+  } else {
+    alert(
+      "Disculpad el error. Probemos con otra identificación."
+    );
+    currentIndex++;
+    askNextFamily();
+  }
+}

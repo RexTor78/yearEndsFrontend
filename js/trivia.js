@@ -2,7 +2,7 @@
 const family = sessionStorage.getItem("family");
 const selfieUrl = sessionStorage.getItem("selfieUrl");
 const productsUrl = sessionStorage.getItem("productsUrl");
-const specialMessage = sessionStorage.getItem("specialMessage");
+const message = sessionStorage.getItem("specialMessage");
 
 // Elementos del DOM
 const triviaContainer = document.getElementById("triviaContainer");

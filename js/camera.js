@@ -1,11 +1,5 @@
 import { API_URL } from "./config.js";
 
-const response = await fetch(`${API_URL}/upload`, {
-  method: "POST",
-  body: formData
-});
-
-
 const photoBtn = document.getElementById("photoBtn");
 const cameraInput = document.getElementById("cameraInput");
 const preview = document.getElementById("preview");
@@ -13,10 +7,13 @@ const continueBtn = document.getElementById("continueBtn");
 const statusMessage = document.getElementById("statusMessage");
 
 let capturedFile = null;
-let detectedFamily = null;
 
-photoBtn.addEventListener("click", () => cameraInput.click());
+// 🔹 Abrir cámara
+photoBtn.addEventListener("click", () => {
+  cameraInput.click();
+});
 
+// 🔹 Al hacer la foto
 cameraInput.addEventListener("change", () => {
   const file = cameraInput.files[0];
   if (!file) return;
@@ -32,6 +29,7 @@ cameraInput.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
+// 🔹 Enviar al backend
 continueBtn.addEventListener("click", async () => {
   if (!capturedFile) return;
 
@@ -47,34 +45,39 @@ continueBtn.addEventListener("click", async () => {
       body: formData
     });
 
-    const data = await response.json();
-    detectedFamily = data.family;
+    if (!response.ok) {
+      throw new Error("Error en backend");
+    }
 
-    // Guardamos datos
+    const data = await response.json();
+
+    // Guardar datos
     sessionStorage.setItem("family", data.family);
     sessionStorage.setItem("requiredProducts", JSON.stringify(data.required_products || []));
     sessionStorage.setItem("specialMessage", data.special_message || "");
     sessionStorage.setItem("selfieUrl", data.url);
 
-    // Nuevo: mostrar confirmación
-    const userConfirm = confirm(`Se ha detectado la familia ${data.family}. ¿Es correcto?`);
-    
-    if (userConfirm) {
-        // Si es correcto, redirigir según necesidad de productos
-        if (data.needs_products) {
-            window.location.href = "./pages/products.html";
-        } else {
-            window.location.href = "./pages/trivia.html";
-        }
+    // Confirmación
+    const confirmFamily = confirm(
+      `Se ha detectado la familia ${data.family}. ¿Es correcto?`
+    );
+
+    if (confirmFamily) {
+      if (data.needs_products) {
+        window.location.href = "./pages/products.html";
+      } else {
+        window.location.href = "./pages/trivia.html";
+      }
     } else {
-        // Si no es correcto, mostrar mensaje de disculpas
-        statusMessage.innerText = "❌ Familia no reconocida. Por favor, intente de nuevo o pruebe con la siguiente familia.";
-        continueBtn.disabled = false;
+      statusMessage.innerText =
+        "❌ Entendido. Intentaremos con la siguiente familia.";
+      continueBtn.disabled = false;
     }
 
   } catch (error) {
-    statusMessage.innerText = "❌ Error al conectar con el sistema de acceso. Inténtelo de nuevo.";
+    console.error(error);
+    statusMessage.innerText =
+      "❌ Error al conectar con el sistema de acceso.";
     continueBtn.disabled = false;
   }
 });
-

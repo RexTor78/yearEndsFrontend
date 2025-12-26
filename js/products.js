@@ -1,63 +1,41 @@
+// products.js
 import { API_URL } from "./config.js";
 
-const photoBtn = document.getElementById("productPhotoBtn");
-const productInput = document.getElementById("productInput");
-const productPreview = document.getElementById("productPreview");
-const continueBtn = document.getElementById("productContinueBtn");
-const statusMessage = document.getElementById("productStatus");
+document.addEventListener("DOMContentLoaded", () => {
+  const productsContainer = document.getElementById("productsContainer");
+  const continueBtn = document.getElementById("continueBtn");
+  const statusMessage = document.getElementById("statusMessage");
 
-let productFile = null;
+  // Simulación de productos requeridos por la familia
+  const family = sessionStorage.getItem("family") || "Familia desconocida";
+  const requiredProducts = JSON.parse(sessionStorage.getItem("requiredProducts") || '["Agua", "Vino", "Frutas"]');
 
-photoBtn.addEventListener("click", () => productInput.click());
+  // Renderizamos productos como checkboxes
+  requiredProducts.forEach(product => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <label>
+        <input type="checkbox" value="${product}" />
+        ${product}
+      </label>
+    `;
+    productsContainer.appendChild(li);
+  });
 
-productInput.addEventListener("change", () => {
-  const file = productInput.files[0];
-  if (!file) return;
+  // Continuar
+  continueBtn.addEventListener("click", () => {
+    const checked = Array.from(productsContainer.querySelectorAll("input:checked")).map(i => i.value);
 
-  productFile = file;
-  const reader = new FileReader();
-  reader.onload = () => {
-    productPreview.src = reader.result;
-    productPreview.style.display = "block";
-    continueBtn.classList.remove("hidden");
-  };
-  reader.readAsDataURL(file);
-});
-
-continueBtn.addEventListener("click", async () => {
-  if (!productFile) return;
-
-  statusMessage.innerText = "🔍 Verificando productos...";
-  continueBtn.disabled = true;
-
-  const formData = new FormData();
-  formData.append("file", productFile);
-
-  try {
-    const response = await fetch(`${API_URL}/upload-products`, {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await response.json();
-
-    // Guardamos URL de Cloudinary
-    sessionStorage.setItem("productsUrl", data.url);
-
-    // Simulación de validación
-    let valid = Math.random() > 0.3; // 70% chance que sea válido
-    if (valid) {
-      statusMessage.innerText = "✅ Productos validados. Avanzando a trivia...";
-      setTimeout(() => {
-        window.location.href = "./pages/trivia.html";
-      }, 1500);
-    } else {
-      statusMessage.innerText = "❌ No se detectan todos los productos. Por favor, repita la foto.";
-      continueBtn.disabled = false;
+    if (!checked.length) {
+      statusMessage.innerText = "⚠️ Seleccione al menos un producto.";
+      return;
     }
 
-  } catch (error) {
-    statusMessage.innerText = "❌ Error al subir la foto de productos.";
-    continueBtn.disabled = false;
-  }
+    sessionStorage.setItem("selectedProducts", JSON.stringify(checked));
+    statusMessage.innerText = "✅ Productos guardados, redirigiendo a Trivia...";
+
+    setTimeout(() => {
+      window.location.href = "./trivia.html";
+    }, 1000);
+  });
 });

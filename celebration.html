@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Celebración</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
 
@@ -14,17 +15,17 @@
     Por favor, hagan una última foto celebrando su entrada a la villa.
   </p>
 
+    <input id="celebrationInput" type="file" accept="image/*" capture="user" />
+    <img id="preview" class="celebration-preview" alt="Vista previa" />
+
+    <button id="submitBtn">Subir foto</button>
+    <p id="status" class="status"></p>
+  </div>
   <button id="finishBtn">Finalizar</button>
 </div>
 
-<!-- CARGAMOS EL JS -->
-<script src="js/navigation.js"></script>
 
-<script>
-  // AQUÍ está la instrucción clara de a dónde ir
-  document.getElementById("finishBtn").addEventListener("click", function () {
-    goTo("collage.html");
-  });
+  <script type="module" src="./js/celebration.js"></script>
 </script>
 
 </body>

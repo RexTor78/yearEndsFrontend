@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Verificación</title>
-<link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productos requeridos</title>
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
+  <div class="container">
+    <h1>Productos requeridos</h1>
+    <p>Marque los productos que su familia ha adquirido:</p>
+
+    <ul id="productsContainer" class="products-list"></ul>
+
+    <button id="continueBtn">Continuar</button>
+    <p id="statusMessage" class="status"></p>
+  </div>
+
+  
+</body>
+</html>
+
 
 <div class="container">
   <h2>Verificación de productos</h2>
@@ -24,6 +39,6 @@ function next() {
   window.location.href = "uvas.html";
 }
 </script>
-
+<script type="module" src="./js/products.js"></script>
 </body>
 </html>

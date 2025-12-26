@@ -1,31 +1,57 @@
-// Recuperamos datos del sessionStorage
-const family = sessionStorage.getItem("family");
-const selfieUrl = sessionStorage.getItem("selfieUrl");
-const productsUrl = sessionStorage.getItem("productsUrl");
-const message = sessionStorage.getItem("specialMessage");
+// trivia.js
+document.addEventListener("DOMContentLoaded", () => {
+  const questionEl = document.getElementById("question");
+  const optionsEl = document.getElementById("options");
 
-// Elementos del DOM
-const triviaContainer = document.getElementById("triviaContainer");
-const selfieImg = document.getElementById("selfieImg");
-const productsImg = document.getElementById("productsImg");
-const statusMessage = document.getElementById("triviaStatus");
+  // Trivia de ejemplo
+  const questions = [
+    {
+      question: "¿Cuál es la comida favorita de la familia?",
+      options: ["Pizza", "Paella", "Sushi", "Tacos"],
+      answer: "Paella"
+    },
+    {
+      question: "¿Cuántos miembros componen la familia?",
+      options: ["2", "3", "4", "5"],
+      answer: "4"
+    },
+    {
+      question: "¿Qué bebida prefieren en las reuniones?",
+      options: ["Agua", "Vino", "Refrescos", "Cerveza"],
+      answer: "Vino"
+    }
+  ];
 
-// Mostrar foto de la familia
-if (selfieUrl) {
-  selfieImg.src = selfieUrl;
-  selfieImg.style.display = "block";
-}
+  let currentQuestionIndex = 0;
 
-// Mostrar foto de productos si existe
-if (productsUrl) {
-  productsImg.src = productsUrl;
-  productsImg.style.display = "block";
-}
+  function renderQuestion() {
+    const q = questions[currentQuestionIndex];
+    questionEl.innerText = q.question;
+    optionsEl.innerHTML = "";
 
-// Mostrar mensaje especial si existe
-if (specialMessage) {
-  statusMessage.innerText = specialMessage;
-}
+    q.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.innerText = opt;
+      btn.classList.add("secondary");
+      btn.addEventListener("click", () => checkAnswer(opt));
+      optionsEl.appendChild(btn);
+    });
+  }
 
-// Aquí puedes agregar lógica del trivia, preguntas y respuestas
-// usando family para personalizar el flujo
+  function checkAnswer(selected) {
+    const q = questions[currentQuestionIndex];
+    if (selected === q.answer) {
+      currentQuestionIndex++;
+      if (currentQuestionIndex >= questions.length) {
+        // Fin trivia
+        window.location.href = "./celebration.html";
+      } else {
+        renderQuestion();
+      }
+    } else {
+      alert("❌ Respuesta incorrecta, intente de nuevo.");
+    }
+  }
+
+  renderQuestion();
+});

@@ -13,12 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmYes = document.getElementById("confirmYes");
   const confirmNo = document.getElementById("confirmNo");
 
-  // Modal sospechoso
-  const suspectModal = document.getElementById("suspectModal");
-  const suspectText = document.getElementById("suspectText");
-  const suspectYes = document.getElementById("suspectYes");
-  const suspectNo = document.getElementById("suspectNo");
-
   let capturedFile = null;
   let predictions = [];
   let currentPredictionIndex = 0;
@@ -38,7 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = (e) => (img.src = e.target.result);
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+
       img.onload = () => {
         let { width, height } = img;
         if (width > maxWidth) {
@@ -57,9 +54,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.drawImage(img, 0, 0, width, height);
 
         canvas.toBlob(
-          (blob) => resolve(new File([blob], file.name, { type: "image/jpeg" })),
+          (blob) => {
+            resolve(new File([blob], file.name, { type: "image/jpeg" }));
+          },
           "image/jpeg",
-          0.7
+          0.7 // compresión al 70%
         );
       };
 
@@ -98,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================
-  // Enviar foto al backend
+  // Enviar foto al backend y manejar predicciones
   // =========================
   continueBtn.addEventListener("click", async () => {
     if (!capturedFile) {
@@ -118,7 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData,
       });
 
-      if (!response.ok) throw new Error(`Error en backend: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Error en backend: ${response.status}`);
+      }
 
       const data = await response.json();
       sessionStorage.setItem("selfieUrl", data.url || "");
@@ -126,7 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
       currentPredictionIndex = 0;
 
       if (!predictions.length) {
-        statusMessage.innerText = "❌ No se ha podido identificar a la familia.";
+        statusMessage.innerText =
+          "❌ No se ha podido identificar a la familia.";
         continueBtn.disabled = false;
         return;
       }
@@ -135,13 +137,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (error) {
       console.error(error);
-      statusMessage.innerText = "❌ Error al conectar con el sistema de acceso.";
+      statusMessage.innerText =
+        "❌ Error al conectar con el sistema de acceso.";
       continueBtn.disabled = false;
     }
   });
 
   // =========================
-  // Mostrar modal de familia
+  // Mostrar modal con familia actual
   // =========================
   function showFamilyConfirmation() {
     const prediction = predictions[currentPredictionIndex];
@@ -153,48 +156,30 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    let text = `Familia detectada: ${prediction.family}\nNivel de confianza: ${Math.round(prediction.confidence * 100)}%\n¿Es correcto?`;
-    if (prediction.special_message) text += `\n\n💬 ${prediction.special_message}`;
-    modalText.innerText = text;
+    const confidencePercent = Math.round(prediction.confidence * 100);
+    modalText.innerText = `Familia detectada: ${prediction.family}\nNivel de confianza: ${confidencePercent}%\n¿Es correcto?`;
     familyModal.classList.remove("hidden");
 
+    // Botón Sí
     confirmYes.onclick = () => {
       familyModal.classList.add("hidden");
       sessionStorage.setItem("family", prediction.family);
       sessionStorage.setItem("specialMessage", prediction.special_message || "");
 
-      if (prediction.sospechoso_member) {
-        showSuspectModal(prediction.sospechoso_member, prediction.sospechoso_message);
+      if (prediction.needs_products) {
+        window.location.href = "./pages/products.html";
       } else {
-        if (prediction.needs_products) window.location.href = "./pages/products.html";
-        else window.location.href = "./pages/trivia.html";
+        window.location.href = "./pages/trivia.html";
       }
     };
 
+    // Botón No
     confirmNo.onclick = () => {
       familyModal.classList.add("hidden");
-      statusMessage.innerText = "🙏 Intentando con la siguiente familia...";
+      statusMessage.innerText =
+        "🙏 Disculpen las molestias. Intentando con la siguiente familia...";
       currentPredictionIndex++;
       setTimeout(showFamilyConfirmation, 1000);
-    };
-  }
-
-  // =========================
-  // Modal integrante sospechoso
-  // =========================
-  function showSuspectModal(name, message) {
-    suspectText.innerText = `⚠️ Integrante sospechoso: ${name}\n${message}`;
-    suspectModal.classList.remove("hidden");
-
-    suspectYes.onclick = () => {
-      suspectModal.classList.add("hidden");
-      window.location.href = "./pages/products.html";
-    };
-
-    suspectNo.onclick = () => {
-      suspectModal.classList.add("hidden");
-      statusMessage.innerText = "📸 Por favor, rehaga la foto para incluir correctamente al integrante.";
-      continueBtn.disabled = false;
     };
   }
 });

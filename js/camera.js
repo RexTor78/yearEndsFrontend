@@ -27,6 +27,43 @@ document.addEventListener("DOMContentLoaded", () => {
     cameraInput.click();
   });
 
+  function getConfidenceMessage(confidence) {
+    if (confidence >= 0.75) {
+      return {
+        level: "alta",
+        icon: "🔐",
+        title: "Identificación casi confirmada",
+        description: "El sistema tiene una coincidencia muy alta."
+      };
+    }
+
+    if (confidence >= 0.5) {
+      return {
+        level: "media",
+        icon: "🔍",
+        title: "Coincidencia probable",
+        description: "La coincidencia es buena, pero requiere confirmación."
+      };
+    }
+
+    if (confidence >= 0.3) {
+      return {
+        level: "baja",
+        icon: "⚠️",
+        title: "Coincidencia débil",
+        description: "La coincidencia es baja y podría tratarse de un error."
+      };
+    }
+
+    return {
+      level: "muy-baja",
+      icon: "❗",
+      title: "Identificación poco fiable",
+      description: "La coincidencia es muy baja."
+    };
+  }
+
+
   // =========================
   // Captura de foto
   // =========================
@@ -78,7 +115,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       predictions = data.predictions || [];
       currentPredictionIndex = 0;
-
+      showFamilyConfirmation();
+      
       if (!predictions.length) {
         statusMessage.innerText =
           "❌ No se ha podido identificar a la familia.";
@@ -111,51 +149,60 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (isRetry) {
-      modalText.innerText =
-        `🙏 Disculpen el error anterior.\n\n¿Son ustedes la familia ${prediction.family}?`;
-    } else {
-      modalText.innerText =
-        `Se ha detectado la familia ${prediction.family}. ¿Es correcto?`;
+      const confidenceInfo = getConfidenceMessage(prediction.confidence);
+      const percent = Math.round(prediction.confidence * 100);
+
+      modalText.innerText = `
+${confidenceInfo.icon} ${confidenceInfo.title}
+
+Familia detectada: ${prediction.family}
+Nivel de confianza: ${percent}%
+
+${confidenceInfo.description}
+
+¿Es correcto?
+`;
+      const modalContent = document.querySelector(".modal-content");
+      modalContent.setAttribute("data-confidence", confidenceInfo.level);
+
+      familyModal.classList.remove("hidden");
     }
 
-    familyModal.classList.remove("hidden");
-  }
 
+    // =========================
+    // CONFIRMAR FAMILIA
+    // =========================
+    confirmYes.addEventListener("click", () => {
+      const prediction = predictions[currentPredictionIndex];
+      familyModal.classList.add("hidden");
 
-  // =========================
-  // CONFIRMAR FAMILIA
-  // =========================
-  confirmYes.addEventListener("click", () => {
-    const prediction = predictions[currentPredictionIndex];
-    familyModal.classList.add("hidden");
+      sessionStorage.setItem("family", prediction.family);
+      sessionStorage.setItem(
+        "specialMessage",
+        prediction.special_message || ""
+      );
 
-    sessionStorage.setItem("family", prediction.family);
-    sessionStorage.setItem(
-      "specialMessage",
-      prediction.special_message || ""
-    );
+      if (prediction.needs_products) {
+        window.location.href = "./pages/products.html";
+      } else {
+        window.location.href = "./pages/trivia.html";
+      }
+    });
 
-    if (prediction.needs_products) {
-      window.location.href = "./pages/products.html";
-    } else {
-      window.location.href = "./pages/trivia.html";
-    }
+    // =========================
+    // RECHAZAR FAMILIA → SIGUIENTE
+    // =========================
+    confirmNo.onclick = () => {
+      familyModal.classList.add("hidden");
+
+      statusMessage.innerText =
+        "🙏 Disculpen las molestias. Permitanme un instante mientras intento verificar sus identidades...";
+
+      currentPredictionIndex++;
+
+      setTimeout(() => {
+        showFamilyConfirmation(true);
+      }, 1200);
+    };
+
   });
-
-  // =========================
-  // RECHAZAR FAMILIA → SIGUIENTE
-  // =========================
-  confirmNo.onclick = () => {
-    familyModal.classList.add("hidden");
-
-    statusMessage.innerText =
-      "🙏 Disculpen las molestias. Permitanme un instante mientras intento verificar sus identidades...";
-
-    currentPredictionIndex++;
-
-    setTimeout(() => {
-      showFamilyConfirmation(true);
-    }, 1200);
-  };
-
-});

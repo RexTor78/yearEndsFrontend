@@ -25,36 +25,79 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================
-  // Mensaje de nivel de confianza
+  // Redimensionar imagen usando canvas
   // =========================
-  function getConfidenceMessage(confidence) {
-    if (confidence >= 0.75) return { icon: "🔐", title: "Identificación casi confirmada", description: "El sistema tiene una coincidencia muy alta." };
-    if (confidence >= 0.5) return { icon: "🔍", title: "Coincidencia probable", description: "La coincidencia es buena, pero requiere confirmación." };
-    if (confidence >= 0.3) return { icon: "⚠️", title: "Coincidencia débil", description: "La coincidencia es baja y podría tratarse de un error." };
-    return { icon: "❗", title: "Identificación poco fiable", description: "La coincidencia es muy baja." };
+  async function resizeImage(file, maxWidth = 800, maxHeight = 600) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = (maxHeight / height) * width;
+          height = maxHeight;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            resolve(new File([blob], file.name, { type: "image/jpeg" }));
+          },
+          "image/jpeg",
+          0.7 // compresión al 70%
+        );
+      };
+
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
   }
 
   // =========================
   // Captura de foto
   // =========================
-  cameraInput.addEventListener("change", () => {
+  cameraInput.addEventListener("change", async () => {
     const file = cameraInput.files[0];
     if (!file) return;
 
-    capturedFile = file;
+    statusMessage.innerText = "📸 Procesando foto...";
+    continueBtn.disabled = true;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      preview.src = reader.result;
-      preview.style.display = "block";
-      continueBtn.classList.remove("hidden");
-      statusMessage.innerText = "";
-    };
-    reader.readAsDataURL(file);
+    try {
+      capturedFile = await resizeImage(file);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = reader.result;
+        preview.style.display = "block";
+        continueBtn.classList.remove("hidden");
+        statusMessage.innerText = "";
+        continueBtn.disabled = false;
+      };
+      reader.readAsDataURL(capturedFile);
+    } catch (err) {
+      console.error(err);
+      statusMessage.innerText = "❌ Error al procesar la foto.";
+      continueBtn.disabled = false;
+    }
   });
 
   // =========================
-  // Enviar foto al backend
+  // Enviar foto al backend y manejar predicciones
   // =========================
   continueBtn.addEventListener("click", async () => {
     if (!capturedFile) {
@@ -74,16 +117,18 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData,
       });
 
-      if (!response.ok) throw new Error(`Error en backend: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Error en backend: ${response.status}`);
+      }
 
       const data = await response.json();
       sessionStorage.setItem("selfieUrl", data.url || "");
-
       predictions = data.predictions || [];
       currentPredictionIndex = 0;
 
       if (!predictions.length) {
-        statusMessage.innerText = "❌ No se ha podido identificar a la familia.";
+        statusMessage.innerText =
+          "❌ No se ha podido identificar a la familia.";
         continueBtn.disabled = false;
         return;
       }
@@ -92,7 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (error) {
       console.error(error);
-      statusMessage.innerText = "❌ Error al conectar con el sistema de acceso.";
+      statusMessage.innerText =
+        "❌ Error al conectar con el sistema de acceso.";
       continueBtn.disabled = false;
     }
   });
@@ -102,32 +148,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   function showFamilyConfirmation() {
     const prediction = predictions[currentPredictionIndex];
-
     if (!prediction) {
       familyModal.classList.add("hidden");
-      statusMessage.innerText = "❌ No hemos podido identificar correctamente a la familia. Disculpen las molestias.";
+      statusMessage.innerText =
+        "❌ No hemos podido identificar correctamente a la familia. Disculpen las molestias.";
       continueBtn.disabled = false;
       return;
     }
 
-    const confidenceInfo = getConfidenceMessage(prediction.confidence);
-    const percent = Math.round(prediction.confidence * 100);
-
-    modalText.innerText = `
-${confidenceInfo.icon} ${confidenceInfo.title}
-
-Familia detectada: ${prediction.family}
-Nivel de confianza: ${percent}%
-
-${confidenceInfo.description}
-
-¿Es correcto?
-`;
+    const confidencePercent = Math.round(prediction.confidence * 100);
+    modalText.innerText = `Familia detectada: ${prediction.family}\nNivel de confianza: ${confidencePercent}%\n¿Es correcto?`;
     familyModal.classList.remove("hidden");
 
-    // =========================
-    // CONFIRMAR FAMILIA
-    // =========================
+    // Botón Sí
     confirmYes.onclick = () => {
       familyModal.classList.add("hidden");
       sessionStorage.setItem("family", prediction.family);
@@ -140,16 +173,13 @@ ${confidenceInfo.description}
       }
     };
 
-    // =========================
-    // RECHAZAR FAMILIA → SIGUIENTE
-    // =========================
+    // Botón No
     confirmNo.onclick = () => {
       familyModal.classList.add("hidden");
       statusMessage.innerText =
-        "🙏 Disculpen las molestias. Intentemos con la siguiente predicción...";
-
+        "🙏 Disculpen las molestias. Intentando con la siguiente familia...";
       currentPredictionIndex++;
-      setTimeout(showFamilyConfirmation, 1200);
+      setTimeout(showFamilyConfirmation, 1000);
     };
   }
 });

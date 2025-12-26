@@ -15,12 +15,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmNo = document.getElementById("confirmNo");
 
   let capturedFile = null;
-  let lastFamilyData = null;
 
-  // 🔹 Abrir cámara
-  photoBtn.addEventListener("click", () => cameraInput.click());
+  // Predicciones IA
+  let predictions = [];
+  let currentPredictionIndex = 0;
 
-  // 🔹 Al hacer la foto
+  // =========================
+  // Abrir cámara
+  // =========================
+  photoBtn.addEventListener("click", () => {
+    cameraInput.click();
+  });
+
+  // =========================
+  // Captura de foto
+  // =========================
   cameraInput.addEventListener("change", () => {
     const file = cameraInput.files[0];
     if (!file) return;
@@ -37,14 +46,16 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsDataURL(file);
   });
 
-  // 🔹 Enviar al backend
+  // =========================
+  // Enviar foto al backend (UNA SOLA VEZ)
+  // =========================
   continueBtn.addEventListener("click", async () => {
     if (!capturedFile) {
       statusMessage.innerText = "⚠️ Por favor, capture una foto primero.";
       return;
     }
 
-    statusMessage.innerText = "🔍 Subiendo foto...";
+    statusMessage.innerText = "🔍 Subiendo foto y verificando identidad...";
     continueBtn.disabled = true;
 
     try {
@@ -61,35 +72,90 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await response.json();
+
+      // Guardar selfie
       sessionStorage.setItem("selfieUrl", data.url || "");
-      lastFamilyData = data;
 
-      // Mostrar modal de confirmación
-      modalText.innerText = `Se ha detectado la familia ${data.family}. ¿Es correcto?`;
-      familyModal.classList.remove("hidden");
+      predictions = data.predictions || [];
+      currentPredictionIndex = 0;
 
-      // Botón Sí
-      confirmYes.onclick = () => {
-        familyModal.classList.add("hidden");
-        if (lastFamilyData.needs_products) {
-          window.location.href = "./pages/products.html";
-        } else {
-          window.location.href = "./pages/trivia.html";
-        }
-      };
-
-      // Botón No
-      confirmNo.onclick = () => {
-        familyModal.classList.add("hidden");
+      if (!predictions.length) {
         statusMessage.innerText =
-          "❌ Familia no reconocida. Intentaremos con la siguiente.";
+          "❌ No se ha podido identificar a la familia.";
         continueBtn.disabled = false;
-      };
+        return;
+      }
+
+      showFamilyConfirmation();
 
     } catch (error) {
       console.error(error);
-      statusMessage.innerText = "❌ Error al subir la foto. Inténtelo de nuevo.";
+      statusMessage.innerText =
+        "❌ Error al conectar con el sistema de acceso.";
       continueBtn.disabled = false;
     }
   });
+
+  // =========================
+  // Mostrar modal con familia actual
+  // =========================
+  function showFamilyConfirmation(isRetry = false) {
+    const prediction = predictions[currentPredictionIndex];
+
+    if (!prediction) {
+      familyModal.classList.add("hidden");
+      statusMessage.innerText =
+        "❌ No hemos podido identificar correctamente a la familia. Disculpen las molestias.";
+      continueBtn.disabled = false;
+      return;
+    }
+
+    if (isRetry) {
+      modalText.innerText =
+        `🙏 Disculpen el error anterior.\n\n¿Son ustedes la familia ${prediction.family}?`;
+    } else {
+      modalText.innerText =
+        `Se ha detectado la familia ${prediction.family}. ¿Es correcto?`;
+    }
+
+    familyModal.classList.remove("hidden");
+  }
+
+
+  // =========================
+  // CONFIRMAR FAMILIA
+  // =========================
+  confirmYes.addEventListener("click", () => {
+    const prediction = predictions[currentPredictionIndex];
+    familyModal.classList.add("hidden");
+
+    sessionStorage.setItem("family", prediction.family);
+    sessionStorage.setItem(
+      "specialMessage",
+      prediction.special_message || ""
+    );
+
+    if (prediction.needs_products) {
+      window.location.href = "./pages/products.html";
+    } else {
+      window.location.href = "./pages/trivia.html";
+    }
+  });
+
+  // =========================
+  // RECHAZAR FAMILIA → SIGUIENTE
+  // =========================
+  confirmNo.onclick = () => {
+    familyModal.classList.add("hidden");
+
+    statusMessage.innerText =
+      "🙏 Disculpen las molestias. Permitanme un instante mientras intento verificar sus identidades...";
+
+    currentPredictionIndex++;
+
+    setTimeout(() => {
+      showFamilyConfirmation(true);
+    }, 1200);
+  };
+
 });

@@ -54,4 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   renderQuestion();
+  if (currentQuestionIndex >= questions.length) {
+    window.location.href = "./celebration.html"; // ← Redirige a celebración
+  }
+
 });

@@ -1,200 +1,163 @@
-import { API_URL } from "./config.js";
+// ===============================
+// GLOBAL STATE
+// ===============================
+let families = [];
+let remainingFamilies = [];
+let confirmedFamily = null;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const photoBtn = document.getElementById("photoBtn");
-  const cameraInput = document.getElementById("cameraInput");
-  const preview = document.getElementById("preview");
-  const continueBtn = document.getElementById("continueBtn");
-  const statusMessage = document.getElementById("statusMessage");
+// ===============================
+// LOAD FAMILIES JSON
+// ===============================
+async function loadFamilies() {
+  const res = await fetch("./families.json");
+  const data = await res.json();
+  families = data.families;
+  remainingFamilies = [...families];
+}
 
-  // Modal de confirmación
-  const familyModal = document.getElementById("familyModal");
-  const modalText = document.getElementById("modalText");
-  const confirmYes = document.getElementById("confirmYes");
-  const confirmNo = document.getElementById("confirmNo");
+loadFamilies();
 
-  // Modal sospechoso
-  const suspectModal = document.getElementById("suspectModal");
-  const suspectText = document.getElementById("suspectText");
-  const suspectYes = document.getElementById("suspectYes");
-  const suspectNo = document.getElementById("suspectNo");
+// ===============================
+// MAIN ENTRY (cuando hacen la foto)
+// ===============================
+async function processPhoto() {
+  if (remainingFamilies.length === 0) {
+    alert("No quedan más familias para evaluar");
+    return;
+  }
 
-  let capturedFile = null;
-  let predictions = [];
-  let currentPredictionIndex = 0;
+  const predictedFamily = getRandomFamily();
+  showFamilyConfirmation(predictedFamily);
+}
 
-  // =========================
-  // Abrir cámara
-  // =========================
-  photoBtn.addEventListener("click", () => {
-    cameraInput.click();
+// ===============================
+// RANDOM FAMILY (sin pesos)
+// ===============================
+function getRandomFamily() {
+  const index = Math.floor(Math.random() * remainingFamilies.length);
+  return remainingFamilies[index];
+}
+
+// ===============================
+// FAMILY CONFIRMATION MODAL
+// ===============================
+function showFamilyConfirmation(family) {
+  openConfirmModal({
+    title: "Familia detectada",
+    text: `¿Es correcta la ${family.display_name}?`,
+    onYes: () => {
+      confirmedFamily = family;
+      handleFamilyConfirmed(family);
+    },
+    onNo: () => {
+      remainingFamilies = remainingFamilies.filter(f => f.id !== family.id);
+      closeModal();
+      setTimeout(processPhoto, 800);
+    }
   });
+}
 
-  // =========================
-  // Redimensionar imagen usando canvas
-  // =========================
-  async function resizeImage(file, maxWidth = 800, maxHeight = 600) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const reader = new FileReader();
+// ===============================
+// AFTER FAMILY CONFIRMED
+// ===============================
+function handleFamilyConfirmed(family) {
+  closeModal();
 
-      reader.onload = (e) => (img.src = e.target.result);
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = (maxWidth / width) * height;
-          width = maxWidth;
-        }
-        if (height > maxHeight) {
-          width = (maxHeight / height) * width;
-          height = maxHeight;
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => resolve(new File([blob], file.name, { type: "image/jpeg" })),
-          "image/jpeg",
-          0.7
-        );
-      };
-
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
+  if (family.special_message) {
+    openInfoModal({
+      title: "Aviso de seguridad",
+      text: family.special_message[0],
+      onContinue: () => handleSuspiciousMember(family)
     });
+    return;
   }
 
-  // =========================
-  // Captura de foto
-  // =========================
-  cameraInput.addEventListener("change", async () => {
-    const file = cameraInput.files[0];
-    if (!file) return;
+  handleSuspiciousMember(family);
+}
 
-    statusMessage.innerText = "📸 Procesando foto...";
-    continueBtn.disabled = true;
+// ===============================
+// SOSPECHOSO FLOW
+// ===============================
+function handleSuspiciousMember(family) {
+  const suspicious = family.members.find(m => m.sospechoso === true);
 
-    try {
-      capturedFile = await resizeImage(file);
+  if (!suspicious) {
+    grantAccess();
+    return;
+  }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        preview.src = reader.result;
-        preview.style.display = "block";
-        continueBtn.classList.remove("hidden");
-        statusMessage.innerText = "";
-        continueBtn.disabled = false;
-      };
-      reader.readAsDataURL(capturedFile);
-    } catch (err) {
-      console.error(err);
-      statusMessage.innerText = "❌ Error al procesar la foto.";
-      continueBtn.disabled = false;
+  openSuspiciousModal({
+    image: suspicious.photo,
+    text: "No ha sido posible identificar al integrante de la imagen.",
+    onRetry: () => {
+      closeModal();
+      setTimeout(grantAccess, 800);
+    },
+    onExclude: () => {
+      closeModal();
+      setTimeout(grantAccess, 800);
     }
   });
+}
 
-  // =========================
-  // Enviar foto al backend
-  // =========================
-  continueBtn.addEventListener("click", async () => {
-    if (!capturedFile) {
-      statusMessage.innerText = "⚠️ Por favor, capture una foto primero.";
-      return;
-    }
-
-    statusMessage.innerText = "🔍 Subiendo foto y verificando identidad...";
-    continueBtn.disabled = true;
-
-    try {
-      const formData = new FormData();
-      formData.append("file", capturedFile);
-
-      const response = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error(`Error en backend: ${response.status}`);
-
-      const data = await response.json();
-      sessionStorage.setItem("selfieUrl", data.url || "");
-      predictions = data.predictions || [];
-      currentPredictionIndex = 0;
-
-      if (!predictions.length) {
-        statusMessage.innerText = "❌ No se ha podido identificar a la familia.";
-        continueBtn.disabled = false;
-        return;
-      }
-
-      showFamilyConfirmation();
-
-    } catch (error) {
-      console.error(error);
-      statusMessage.innerText = "❌ Error al conectar con el sistema de acceso.";
-      continueBtn.disabled = false;
+// ===============================
+// FINAL ACCESS
+// ===============================
+function grantAccess() {
+  openInfoModal({
+    title: "Acceso concedido",
+    text: `Perfecto, se ha validado la ${confirmedFamily.display_name}.`,
+    onContinue: () => {
+      closeModal();
+      console.log("➡️ Pasando a la trivia...");
+      window.location.href = "./trivia.html";
     }
   });
+}
 
-  // =========================
-  // Mostrar modal de familia
-  // =========================
-  function showFamilyConfirmation() {
-    const prediction = predictions[currentPredictionIndex];
-    if (!prediction) {
-      familyModal.classList.add("hidden");
-      statusMessage.innerText =
-        "❌ No hemos podido identificar correctamente a la familia. Disculpen las molestias.";
-      continueBtn.disabled = false;
-      return;
-    }
+/* ======================================================
+   PLACEHOLDERS → CONECTA AQUÍ TUS MODALES REALES
+====================================================== */
 
-    let text = `Familia detectada: ${prediction.family}\nNivel de confianza: ${Math.round(prediction.confidence * 100)}%\n¿Es correcto?`;
-    if (prediction.special_message) text += `\n\n💬 ${prediction.special_message}`;
-    modalText.innerText = text;
-    familyModal.classList.remove("hidden");
+function openConfirmModal({ title, text, onYes, onNo }) {
+  document.getElementById("modalTitle").innerText = title;
+  document.getElementById("modalText").innerText = text;
+  document.getElementById("familyModal").classList.remove("hidden");
+  document.getElementById("confirmYes").onclick = onYes;
+  document.getElementById("confirmNo").onclick = onNo;
+}
 
-    confirmYes.onclick = () => {
-      familyModal.classList.add("hidden");
-      sessionStorage.setItem("family", prediction.family);
-      sessionStorage.setItem("specialMessage", prediction.special_message || "");
+function openSuspiciousModal({ image, text, onRetry, onExclude }) {
+  console.log("SOSPECHOSO:", image, text);
+  // conecta tu modal real
+  document.getElementById("retryBtn")?.addEventListener("click", onRetry);
+  document.getElementById("excludeBtn")?.addEventListener("click", onExclude);
+}
 
-      if (prediction.sospechoso_member) {
-        showSuspectModal(prediction.sospechoso_member, prediction.sospechoso_message);
-      } else {
-        if (prediction.needs_products) window.location.href = "./pages/products.html";
-        else window.location.href = "./pages/trivia.html";
-      }
-    };
+function openInfoModal({ title, text, onContinue }) {
+  console.log(title, text);
+  document.getElementById("continueBtn").onclick = onContinue;
+}
 
-    confirmNo.onclick = () => {
-      familyModal.classList.add("hidden");
-      statusMessage.innerText = "🙏 Intentando con la siguiente familia...";
-      currentPredictionIndex++;
-      setTimeout(showFamilyConfirmation, 1000);
-    };
-  }
+function closeModal() {
+  document.getElementById("familyModal")?.classList.add("hidden");
+  console.log("Modal cerrado");
+}
 
-  // =========================
-  // Modal integrante sospechoso
-  // =========================
-  function showSuspectModal(name, message) {
-    suspectText.innerText = `⚠️ Integrante sospechoso: ${name}\n${message}`;
-    suspectModal.classList.remove("hidden");
+// ===============================
+// EVENT LISTENER FOTO
+// ===============================
+document.getElementById("photoBtn").addEventListener("click", () => {
+  document.getElementById("cameraInput").click();
+});
 
-    suspectYes.onclick = () => {
-      suspectModal.classList.add("hidden");
-      window.location.href = "./pages/products.html";
-    };
+document.getElementById("cameraInput").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    suspectNo.onclick = () => {
-      suspectModal.classList.add("hidden");
-      statusMessage.innerText = "📸 Por favor, rehaga la foto para incluir correctamente al integrante.";
-      continueBtn.disabled = false;
-    };
-  }
+  const preview = document.getElementById("preview");
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = "block";
+
+  setTimeout(processPhoto, 500);
 });

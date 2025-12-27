@@ -120,6 +120,19 @@
 
     // Inicializamos
     showQuestion();
+
+    if (currentIndex >= questions.length) {
+  questionTitle.innerText = "🎉 ¡Has completado la trivia!";
+  answersList.innerHTML = "";
+  triviaStatus.innerText = "Gracias por participar. ¡Diviértete en la villa!";
+  nextBtn.classList.add("hidden");
+
+  // Redirige a celebration.html o página final
+  setTimeout(() => {
+    window.location.href = "pages/celebration.html";
+  }, 2000);
+}
+
   </script>
 </body>
 </html>

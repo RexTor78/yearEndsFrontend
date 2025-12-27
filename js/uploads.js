@@ -1,23 +1,20 @@
-continueBtn.onclick = async () => {
-  const formData = new FormData();
-  formData.append("file", capturedFile);
-  formData.append("family", "unknown");
-  formData.append("photo_type", "selfies");
+import { v2 as cloudinary } from 'cloudinary';
 
-  const res = await fetch("http://127.0.0.1:8000/upload", {
-    method: "POST",
-    body: formData
-  });
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-  const data = await res.json();
-document.getElementById("status").innerText = data.message;
-
-// Guardamos estado mínimo
-localStorage.setItem("familyCandidate", "Alexandra");
-
-// Pasar a confirmación
-setTimeout(() => {
-  window.location.href = "confirm.html";
-}, 800);
-
-};
+export async function handler(event, context) {
+  const { image } = JSON.parse(event.body);
+  try {
+    const result = await cloudinary.uploader.upload(image);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result)
+    };
+  } catch (err) {
+    return { statusCode: 500, body: err.message };
+  }
+}

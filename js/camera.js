@@ -1,6 +1,3 @@
-// camera.js
-import { API_URL } from "./config.js";
-
 document.addEventListener("DOMContentLoaded", () => {
   const photoBtn = document.getElementById("photoBtn");
   const cameraInput = document.getElementById("cameraInput");

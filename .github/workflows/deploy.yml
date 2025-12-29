@@ -13,15 +13,14 @@ jobs:
 
       # Este paso busca la palabra clave y la cambia por el secreto real
       - name: Inyectar API Key
+        - name: Verificar y Modificar Archivo
         run: |
-        # Verificamos que el archivo existe antes de intentar cambiarlo
-          if [ -f "js/camera.js" ]; then
-            sed -i 's/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g' js/camera.js
-            echo "✅ Clave inyectada con éxito"
-          else
-            echo "❌ ERROR: No se encontró js/camera.js"
-            exit 1
-          fi
+          echo "Listando archivos para verificar ruta:"
+          ls -R
+          echo "Intentando inyectar clave en js/camera.js..."
+          sed -i "s/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g" js/camera.js
+          echo "Contenido de la línea de la API Key (anonimizado para el log):"
+          grep "const IMGBB_API_KEY" js/camera.js
          
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

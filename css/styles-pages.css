@@ -1,6 +1,3 @@
-/* =========================
-   RESET Y TIPOGRAFÍA
-   ========================= */
 * {
   box-sizing: border-box;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -20,9 +17,6 @@ body {
   animation: fadeIn 0.4s ease;
 }
 
-/* =========================
-   CONTENEDOR PRINCIPAL
-   ========================= */
 .container {
   width: 100%;
   max-width: 480px;
@@ -34,9 +28,6 @@ body {
   text-align: center;
 }
 
-/* =========================
-   TITULOS Y TEXTO
-   ========================= */
 h1, h2 {
   font-size: 1.3rem;
   margin-bottom: 16px;
@@ -49,9 +40,6 @@ p {
   margin-bottom: 24px;
 }
 
-/* =========================
-   BOTONES
-   ========================= */
 button {
   width: 100%;
   padding: 14px;
@@ -76,9 +64,6 @@ button:active {
   opacity: 0.9;
 }
 
-/* =========================
-   LISTAS DE PRODUCTOS
-   ========================= */
 ul#productsContainer {
   list-style: none;
   padding: 0;
@@ -97,9 +82,6 @@ ul#productsContainer input[type="checkbox"] {
   margin-right: 10px;
 }
 
-/* =========================
-   IMÁGENES
-   ========================= */
 img {
   width: 100%;
   margin-top: 16px;
@@ -107,18 +89,12 @@ img {
   display: none;
 }
 
-/* =========================
-   MENSAJES DE ESTADO
-   ========================= */
 #status, #statusMessage {
   margin-top: 16px;
   font-size: 0.9rem;
   opacity: 0.85;
 }
 
-/* =========================
-   MODAL
-   ========================= */
 .modal {
   position: fixed;
   top: 0;
@@ -174,9 +150,6 @@ img {
   color: white;
 }
 
-/* =========================
-   ANIMACIÓN
-   ========================= */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -186,4 +159,26 @@ img {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+
+body.celebration-page {
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  padding-top: 32px;
+}
+
+.results-title {
+  font-size: 1.8rem;
+  margin-bottom: 24px;
+  text-align: center;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+#resultsCanvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
 }

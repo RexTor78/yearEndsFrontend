@@ -14,12 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
       - name: Verificar e Inyectar API Key
-=======
-      - name: Inyectar API Key
-        - name: Verificar y Modificar Archivo
->>>>>>> 2df910394fd45930adf1bd43dd3532b929f8bde2
         run: |
           echo "Listando archivos para verificar ruta:"
           ls -R
@@ -37,10 +32,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-<<<<<<< HEAD
           folder: . 
           branch: gh-pages
-=======
-          folder: . # La carpeta donde está tu index.html
-          branch: gh-pages # Se publicará en esta rama
->>>>>>> 2df910394fd45930adf1bd43dd3532b929f8bde2

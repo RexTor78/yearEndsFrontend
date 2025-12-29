@@ -11,7 +11,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Este paso busca la palabra clave y la cambia por el secreto real
       - name: Inyectar API Key
         - name: Verificar y Modificar Archivo
         run: |

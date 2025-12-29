@@ -2,7 +2,10 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"] # O la rama que uses
+    branches: ["main"]
+
+permissions:
+  contents: write
 
 jobs:
   build-and-deploy:
@@ -11,19 +14,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Este paso busca la palabra clave y la cambia por el secreto real
-      - name: Inyectar API Key
-        - name: Verificar y Modificar Archivo
+      - name: Verificar e Inyectar API Key
         run: |
           echo "Listando archivos para verificar ruta:"
           ls -R
-          echo "Intentando inyectar clave en js/camera.js..."
-          sed -i "s/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g" js/camera.js
-          echo "Contenido de la línea de la API Key (anonimizado para el log):"
-          grep "const IMGBB_API_KEY" js/camera.js
-         
+          
+          # Verificamos si el archivo existe antes de aplicar sed
+          if [ -f "js/camera.js" ]; then
+            echo "Archivo encontrado. Inyectando clave..."
+            sed -i "s/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g" js/camera.js
+            echo "✅ Clave inyectada."
+          else
+            echo "❌ ERROR: No se encontró el archivo en js/camera.js"
+            exit 1
+          fi
+
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: . # La carpeta donde está tu index.html
-          branch: gh-pages # Se publicará en esta rama
+          folder: . 
+          branch: gh-pages

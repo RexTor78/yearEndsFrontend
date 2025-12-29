@@ -14,7 +14,7 @@ jobs:
       # Este paso busca la palabra clave y la cambia por el secreto real
       - name: Inyectar API Key
         run: |
-          sed -i 's/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g' ../js/camera.js
+          sed -i 's/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g' ./js/camera.js
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

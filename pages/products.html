@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productos requeridos</title>
+  <link rel="stylesheet" href="../css/styles-pages.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Productos requeridos</h1>
+    <p>Marque los productos que su familia ha adquirido:</p>
+
+    <ul id="productsContainer" class="products-list"></ul>
+
+    <button id="continueBtn">Continuar</button>
+    <p id="statusMessage" class="status"></p>
+  </div>
+
+  
+</body>
+</html>
+
+
+<div class="container">
+  <h2>Verificación de productos</h2>
+  <p id="productsMessage"></p>
+  <p>Por favor, realicen una foto de los productos indicados.</p>
+<button id="photoBtn">📸 Hacer foto de los productos</button>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+
+  
+
+  <button onclick="next()">Continuar</button>
+</div>
+
+<script>
+function next() {
+  window.location.href = "uvas.html";
+}
+</script>
+<script type="module" src="./js/products.js"></script>
+</body>
+</html>

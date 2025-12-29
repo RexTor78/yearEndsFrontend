@@ -1,0 +1,70 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #0f172a;
+  color: #f8fafc;
+  margin: 0;
+  padding: 16px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  text-align: center;
+}
+
+#collageCentral {
+  margin-bottom: 32px;
+}
+
+#centralImage {
+  width: 60%;
+  border-radius: 16px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.chartsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 24px;
+}
+
+.chartCard {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 16px;
+  width: 250px;
+}
+#familyCollages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.familyCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.familyCard img {
+  width: 150px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Flecha usando pseudo-elemento */
+.familyCard::after {
+  content: '';
+  width: 60px;
+  height: 2px;
+  background: #22c55e;
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+}

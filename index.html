@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso a la Villa</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Acceso restringido</h1>
+    <p>
+      Por favor, va usted a acceder a una de las casas más protegidas de esta villa.
+      Necesitamos que usted y todos los componentes de su familia se hagan una selfie
+      conjunta para poder acceder y conceder los permisos necesarios.
+    </p>
+
+    <button id="photoBtn">📸 Hacer foto</button>
+    <input id="cameraInput" type="file" accept="image/*" capture="user" style="display:none" />
+    <img id="preview" alt="Vista previa" />
+    <button id="continueBtn" class="hidden">Continuar</button>
+    <p id="statusMessage" class="status"></p>
+  </div>
+
+  <!-- Modal confirmación familia -->
+  <div id="familyModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="modalTitle">Confirmación de familia</h2>
+      <p id="modalText"></p>
+      <div class="modal-buttons">
+        <button id="confirmYes">✅ Sí</button>
+        <button id="confirmNo">❌ No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal sospechoso -->
+  <div id="suspiciousModal" class="modal hidden">
+    <div class="modal-content">
+      <img id="suspiciousImage" src="" alt="Sospechoso" />
+      <p id="suspiciousText"></p>
+      <div class="modal-buttons">
+        <button id="retryBtn">📸 Reintentar</button>
+        <button id="excludeBtn">❌ Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal info -->
+  <div id="infoModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="infoTitle"></h2>
+      <p id="infoText"></p>
+      <button id="continueBtnInfo">Continuar</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/camera.js"></script>
+</body>
+</html>

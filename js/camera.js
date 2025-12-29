@@ -180,9 +180,9 @@ ${confidenceInfo.description}
       );
 
       if (prediction.needs_products) {
-        window.location.href = "./pages/products.html";
+        window.location.href = "../pages/products.html";
       } else {
-        window.location.href = "./pages/trivia.html";
+        window.location.href = "../pages/trivia.html";
       }
     });
 

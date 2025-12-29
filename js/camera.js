@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   // CONFIGURACIÓN
-  // Si usas GitHub Actions, el script de despliegue cambiará "6942ae0af0c0389fb49285b542e7efb5" por tu clave real.
+  // Si usas GitHub Actions, el script de despliegue cambiará "afe756e9b1fd9a31af04e38b654bf59c" por tu clave real.
   // Si prefieres probarlo ya, puedes pegar tu clave directamente aquí entre las comillas.
-  const IMGBB_API_KEY = "6942ae0af0c0389fb49285b542e7efb5"; 
+  const IMGBB_API_KEY = "afe756e9b1fd9a31af04e38b654bf59c"; 
 
   const photoBtn = document.getElementById("photoBtn");
   const cameraInput = document.getElementById("cameraInput");

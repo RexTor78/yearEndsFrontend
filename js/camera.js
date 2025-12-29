@@ -1,75 +1,39 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // CONFIGURACIÓN
+  // Si usas GitHub Actions, el script de despliegue cambiará "REPLACE_ME_WITH_KEY" por tu clave real.
+  // Si prefieres probarlo ya, puedes pegar tu clave directamente aquí entre las comillas.
+  const IMGBB_API_KEY = "REPLACE_ME_WITH_KEY"; 
+
   const photoBtn = document.getElementById("photoBtn");
   const cameraInput = document.getElementById("cameraInput");
   const preview = document.getElementById("preview");
   const continueBtn = document.getElementById("continueBtn");
   const statusMessage = document.getElementById("statusMessage");
 
-  // Modal de confirmación
   const familyModal = document.getElementById("familyModal");
   const modalText = document.getElementById("modalText");
   const confirmYes = document.getElementById("confirmYes");
   const confirmNo = document.getElementById("confirmNo");
 
   let capturedFile = null;
-
-  // Predicciones IA
   let predictions = [];
   let currentPredictionIndex = 0;
 
   // =========================
-  // Abrir cámara
+  // 1. ABRIR CÁMARA
   // =========================
   photoBtn.addEventListener("click", () => {
     cameraInput.click();
   });
 
-  function getConfidenceMessage(confidence) {
-    if (confidence >= 0.75) {
-      return {
-        level: "alta",
-        icon: "🔐",
-        title: "Identificación casi confirmada",
-        description: "El sistema tiene una coincidencia muy alta."
-      };
-    }
-
-    if (confidence >= 0.5) {
-      return {
-        level: "media",
-        icon: "🔍",
-        title: "Coincidencia probable",
-        description: "La coincidencia es buena, pero requiere confirmación."
-      };
-    }
-
-    if (confidence >= 0.3) {
-      return {
-        level: "baja",
-        icon: "⚠️",
-        title: "Coincidencia débil",
-        description: "La coincidencia es baja y podría tratarse de un error."
-      };
-    }
-
-    return {
-      level: "muy-baja",
-      icon: "❗",
-      title: "Identificación poco fiable",
-      description: "La coincidencia es muy baja."
-    };
-  }
-
-
   // =========================
-  // Captura de foto
+  // 2. CAPTURA Y VISTA PREVIA
   // =========================
   cameraInput.addEventListener("change", () => {
     const file = cameraInput.files[0];
     if (!file) return;
 
     capturedFile = file;
-
     const reader = new FileReader();
     reader.onload = () => {
       preview.src = reader.result;
@@ -81,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================
-  // Enviar foto al backend (UNA SOLA VEZ)
+  // 3. SUBIDA A IMGBB Y PROCESAMIENTO
   // =========================
   continueBtn.addEventListener("click", async () => {
     if (!capturedFile) {
@@ -89,117 +53,113 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    statusMessage.innerText = "🔍 Subiendo foto y verificando identidad...";
+    statusMessage.innerText = "🚀 Subiendo foto a la nube y analizando...";
     continueBtn.disabled = true;
 
     try {
+      // Preparar envío a ImgBB
       const formData = new FormData();
-      formData.append("file", capturedFile);
+      formData.append("image", capturedFile);
 
-      const response = await fetch(`${API_URL}/upload`, {
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
         method: "POST",
-        body: formData,
+        body: formData
       });
-
-      if (!response.ok) {
-        throw new Error(`Error en backend: ${response.status}`);
-      }
 
       const data = await response.json();
 
-      // Guardar selfie
-      sessionStorage.setItem("selfieUrl", data.url || "");
-
-      predictions = data.predictions || [];
-      currentPredictionIndex = 0;
-      showFamilyConfirmation();
-      
-      if (!predictions.length) {
-        statusMessage.innerText =
-          "❌ No se ha podido identificar a la familia.";
-        continueBtn.disabled = false;
-        return;
+      if (!data.success) {
+        throw new Error("Error en la subida a ImgBB");
       }
 
-      showFamilyConfirmation();
+      const imageUrl = data.data.url;
+
+      // GUARDAR URL PARA EL COLLAGE
+      let collagePhotos = JSON.parse(localStorage.getItem("collagePhotos") || "[]");
+      collagePhotos.push(imageUrl);
+      localStorage.setItem("collagePhotos", JSON.stringify(collagePhotos));
+
+      // SIMULACIÓN DE IA (Sustituye esto cuando tengas un backend real)
+      predictions = [
+        { 
+            family: "Familia García", 
+            confidence: 0.88, 
+            special_message: "¡Bienvenidos a la Villa!", 
+            needs_products: false 
+        },
+        { 
+            family: "Familia Rodríguez", 
+            confidence: 0.45, 
+            special_message: "Es un placer veros.", 
+            needs_products: true 
+        }
+      ];
+
+      currentPredictionIndex = 0;
+      showFamilyConfirmation(true);
 
     } catch (error) {
       console.error(error);
-      statusMessage.innerText =
-        "❌ Error al conectar con el sistema de acceso.";
+      statusMessage.innerText = "❌ Error al subir la imagen. Verifica la API Key.";
       continueBtn.disabled = false;
     }
   });
 
   // =========================
-  // Mostrar modal con familia actual
+  // 4. LÓGICA DEL MODAL
   // =========================
-  function showFamilyConfirmation(isRetry = false) {
+  function getConfidenceMessage(confidence) {
+    if (confidence >= 0.75) return { level: "alta", icon: "🔐", title: "Coincidencia alta" };
+    if (confidence >= 0.5) return { level: "media", icon: "🔍", title: "Coincidencia probable" };
+    return { level: "baja", icon: "⚠️", title: "Coincidencia débil" };
+  }
+
+  function showFamilyConfirmation(isFirstTime = false) {
     const prediction = predictions[currentPredictionIndex];
 
     if (!prediction) {
       familyModal.classList.add("hidden");
-      statusMessage.innerText =
-        "❌ No hemos podido identificar correctamente a la familia. Disculpen las molestias.";
+      statusMessage.innerText = "❌ No hay más coincidencias disponibles.";
       continueBtn.disabled = false;
       return;
     }
 
-    if (isRetry) {
-      const confidenceInfo = getConfidenceMessage(prediction.confidence);
-      const percent = Math.round(prediction.confidence * 100);
+    const info = getConfidenceMessage(prediction.confidence);
+    const percent = Math.round(prediction.confidence * 100);
 
-      modalText.innerText = `
-${confidenceInfo.icon} ${confidenceInfo.title}
+    modalText.innerHTML = `
+      <strong>${info.icon} ${info.title}</strong><br><br>
+      Familia: ${prediction.family}<br>
+      Confianza: ${percent}%<br><br>
+      ¿Es correcto?
+    `;
+    
+    familyModal.classList.remove("hidden");
+  }
 
-Familia detectada: ${prediction.family}
-Nivel de confianza: ${percent}%
+  // Eventos de botones del modal (Definidos una sola vez)
+  confirmYes.addEventListener("click", () => {
+    const prediction = predictions[currentPredictionIndex];
+    sessionStorage.setItem("family", prediction.family);
+    sessionStorage.setItem("specialMessage", prediction.special_message || "");
 
-${confidenceInfo.description}
-
-¿Es correcto?
-`;
-      const modalContent = document.querySelector(".modal-content");
-      modalContent.setAttribute("data-confidence", confidenceInfo.level);
-
-      familyModal.classList.remove("hidden");
+    // Redirección según lógica de negocio
+    if (prediction.needs_products) {
+      window.location.href = "pages/products.html";
+    } else {
+      window.location.href = "pages/trivia.html";
     }
-
-
-    // =========================
-    // CONFIRMAR FAMILIA
-    // =========================
-    confirmYes.addEventListener("click", () => {
-      const prediction = predictions[currentPredictionIndex];
-      familyModal.classList.add("hidden");
-
-      sessionStorage.setItem("family", prediction.family);
-      sessionStorage.setItem(
-        "specialMessage",
-        prediction.special_message || ""
-      );
-
-      if (prediction.needs_products) {
-        window.location.href = "../pages/products.html";
-      } else {
-        window.location.href = "../pages/trivia.html";
-      }
-    });
-
-    // =========================
-    // RECHAZAR FAMILIA → SIGUIENTE
-    // =========================
-    confirmNo.onclick = () => {
-      familyModal.classList.add("hidden");
-
-      statusMessage.innerText =
-        "🙏 Disculpen las molestias. Permitanme un instante mientras intento verificar sus identidades...";
-
-      currentPredictionIndex++;
-
-      setTimeout(() => {
-        showFamilyConfirmation(true);
-      }, 1200);
-    };
-
   });
+
+  confirmNo.onclick = () => {
+    familyModal.classList.add("hidden");
+    statusMessage.innerText = "Buscando otra coincidencia...";
+    currentPredictionIndex++;
+    
+    // Pequeño retardo para dar sensación de procesamiento
+    setTimeout(() => {
+      showFamilyConfirmation();
+    }, 1000);
+  };
+
+});

@@ -1,0 +1,23 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"] # O la rama que uses
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Este paso busca la palabra clave y la cambia por el secreto real
+      - name: Inyectar API Key
+        run: |
+          sed -i 's/REPLACE_ME_WITH_KEY/${{ secrets.IMGBB_API_KEY }}/g' js/camera.js
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: . # La carpeta donde está tu index.html
+          branch: gh-pages # Se publicará en esta rama

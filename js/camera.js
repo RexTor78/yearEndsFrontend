@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 confirmYes.onclick = () => {
                     sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
-                    window.location.href = "trivia.html";
+                    window.location.href = "pages/trivia.html";
                 };
 
                 confirmNo.onclick = () => {

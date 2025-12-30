@@ -199,3 +199,18 @@ input[type="file"] {
   width: 0;
   height: 0;
 }
+#preview {
+    display: none; /* Se cambia a block por JS */
+}
+
+#continueBtn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin-top: 15px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}

@@ -1,24 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Administrador</title>
-<link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8">
+    <title>Panel de Control - Administrador</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<h1>Panel administrador</h1>
+<div class="container">
+    <h1>Panel Administrador</h1>
 
-<select id="familySelect">
-  <option>Ingrid</option>
-  <option>Alexandra</option>
-  <option>Ona</option>
-  <option>Aitana</option>
-</select>
+    <div style="background: rgba(255,0,0,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h3>Control de Acceso Real-Time</h3>
+        <button onclick="grantAccess()" style="background: #22c55e; color: white; padding: 15px; width: 100%;">
+            🔓 CONCEDER ACCESO AHORA
+        </button>
+        <p id="adminStatus" style="font-size: 0.8em; margin-top: 5px;"></p>
+    </div>
 
-<div id="sliders"></div>
+    <hr>
 
-<button onclick="saveScores()">Guardar</button>
+    <h3>Puntuaciones por Familia</h3>
+    <select id="familySelect">
+      <option value="Ingrid">Ingrid</option>
+      <option value="Alexandra">Alexandra</option>
+      <option value="Ona">Ona</option>
+      <option value="Aitana">Aitana</option>
+    </select>
+
+    <div id="sliders"></div>
+
+    <button onclick="saveScores()">Guardar Puntuaciones</button>
+</div>
 
 <script src="js/admin.js"></script>
 </body>

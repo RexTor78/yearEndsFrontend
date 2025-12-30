@@ -1,33 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Acceso a la Villa</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body>
+
   <div class="container">
     <h1>Acceso restringido</h1>
+    <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display: none;" />
+
     <p>
       Por favor, va usted a acceder a una de las casas más protegidas de esta villa. Necesitamos que usted y todos los
       componentes de su familia se hagan una selfie conjunta para poder acceder y conceder los permisos necesarios, así
       como para poder calcular a posteriori los gastos que se generen por su visita en caso de ser necesario.
     </p>
 
-<label for="cameraInput" class="camera-button">
-  📸 Hacer foto
-</label>
+    <label for="cameraInput" class="camera-button">📸 Hacer foto</label>
 
-<input
-  id="cameraInput"
-  type="file"
-  accept="image/*"
-  capture="environment"
-/>
+    <img id="preview" alt="Vista previa" style="display:none; width:100%; margin-top:10px; border-radius:10px;" />
 
-    <img id="preview" alt="Vista previa" />
-    <button id="continueBtn" class="hidden">Continuar</button>
+    <button id="continueBtn" class="hidden" style="position: relative; z-index: 10;">Continuar</button>
+
     <p id="statusMessage" class="status"></p>
   </div>
 
@@ -66,4 +64,5 @@
 
   <script type="module" src="js/camera.js"></script>
 </body>
+
 </html>

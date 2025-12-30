@@ -31,7 +31,8 @@ function grantAccess() {
 
     // Limpiamos la señal después de un momento
     setTimeout(() => {
-        status.innerText = "";
+        status.innerText = "🔓 CONCEDER ACCESO";
+        btn.style.background = "#22c55e";
     }, 3000);
 }
 

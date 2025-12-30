@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    // Selectores
     const cameraInput = document.getElementById("cameraInput");
     const preview = document.getElementById("preview");
     const continueBtn = document.getElementById("continueBtn");
@@ -14,18 +13,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentIndex = 0;
     let capturedImage = null;
 
-    // 1. Cargar familias y mezclarlas
+    // Limpiar señales de admin previas
+    localStorage.removeItem("adminApproval");
+
+    // 1. Cargar familias (con manejo de errores para que no se cuelgue)
     try {
         const response = await fetch("families.json");
+        if (!response.ok) throw new Error("No se pudo cargar el JSON");
         const data = await response.json();
         families = data.families;
-        // Mezclamos para que el orden sea aleatorio cada vez
-        shuffledFamilies = families.sort(() => Math.random() - 0.5);
+        shuffledFamilies = [...families].sort(() => Math.random() - 0.5);
     } catch (error) {
-        console.error("Error al cargar familias:", error);
+        console.error("Error:", error);
+        statusMessage.innerText = "Error cargando base de datos.";
     }
 
-    // 2. Evento Cámara (Previsualización)
+    // 2. Evento Cámara
     cameraInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -35,63 +38,63 @@ document.addEventListener("DOMContentLoaded", async () => {
                 preview.style.display = "block";
                 continueBtn.classList.remove("hidden");
                 capturedImage = event.target.result;
-                statusMessage.innerText = "Foto lista para análisis.";
+                statusMessage.innerText = "Foto capturada correctamente.";
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // 3. Botón Continuar (Análisis inicial)
-    const handleContinue = (e) => {
-        if (e) e.preventDefault();
+    // 3. Función de análisis (La que se colgaba)
+    function startAnalysis() {
         if (!capturedImage) return;
-
-        sessionStorage.setItem("selfie", capturedImage);
+        
         statusMessage.innerText = "🧠 Analizando rasgos faciales...";
         
+        // Usamos un tiempo corto para asegurar que el DOM se actualice
         setTimeout(() => {
             showPrediction();
-        }, 1500);
-    };
+        }, 1200);
+    }
 
-    continueBtn.addEventListener("click", handleContinue);
+    // Soporte para Click y Touch (Móvil)
+    continueBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        startAnalysis();
+    });
 
-    // 4. Lógica de Predicción y Bucle
+    // 4. Lógica de Predicción
     function showPrediction() {
-        // Si superamos el array, volvemos al principio o manejamos fin de lista
-        if (currentIndex >= shuffledFamilies.length) {
-            currentIndex = 0; // Reinicia el bucle si quieres que sea infinito por las 6
+        if (shuffledFamilies.length === 0) {
+            statusMessage.innerText = "Error: No hay familias cargadas.";
+            return;
         }
 
-        const family = shuffledFamilies[currentIndex];
+        const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
         
-        // CASO ESPECIAL: La familia en 3ª posición (índice 2)
+        // CASO ESPECIAL: 3ª posición (índice 2)
         if (currentIndex === 2) {
             modalText.innerHTML = `
-                <span style="color: #ff6b6b; font-weight: bold;">⚠️ ACCESO RESTRINGIDO</span><br><br>
-                El sistema identifica que sois la <b>${family.display_name}</b>.<br><br>
-                Debido a vuestro historial, se ha enviado una notificación al administrador. 
-                Por favor, esperad a que se os conceda acceso remoto.
+                <div style="color: #ff4444; font-weight: bold; margin-bottom:10px;">⚠️ ACCESO RESTRINGIDO</div>
+                Identificado como: <b>${family.display_name}</b>.<br><br>
+                Su historial requiere aprobación manual. Se ha notificado al administrador.
             `;
-            // Cambiamos el comportamiento de los botones para este caso
-            confirmYes.innerText = "Esperar aprobación";
-            confirmNo.style.display = "none"; // No pueden decir que no, están bloqueados
-            
+            confirmYes.innerText = "Esperar Aprobación";
+            confirmNo.style.display = "none"; // Bloqueamos el "No"
+
             confirmYes.onclick = () => {
-                statusMessage.innerText = "⏳ Avisando al administrador... Esperando señal.";
                 familyModal.classList.add("hidden");
-                checkAdminApproval(); // Función para conectar con tu admin.html
+                statusMessage.innerHTML = "⏳ <span style='color:orange'>Esperando respuesta del administrador...</span>";
+                checkAdminApproval(family);
             };
         } else {
-            // Caso Normal (Familias 1, 2, 4, 5 y 6)
+            // Caso normal
+            confirmNo.style.display = "inline-block";
             confirmYes.innerText = "✅ Sí";
             confirmNo.innerText = "❌ No";
-            confirmNo.style.display = "inline-block";
-            
+
             modalText.innerHTML = `
                 Análisis completado.<br><br>
-                Predicción: <b>${family.display_name}</b><br><br>
-                ¿Es correcto?
+                ¿Sois la <b>${family.display_name}</b>?
             `;
 
             confirmYes.onclick = () => {
@@ -101,26 +104,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             confirmNo.onclick = () => {
                 familyModal.classList.add("hidden");
-                currentIndex++; // Siguiente familia
-                statusMessage.innerText = "Re-escaneando base de datos...";
-                setTimeout(showPrediction, 1000);
+                currentIndex++;
+                statusMessage.innerText = "Buscando nueva coincidencia...";
+                setTimeout(showPrediction, 800);
             };
         }
-
         familyModal.classList.remove("hidden");
     }
 
-    // 5. Función de espera (Conexión con admin)
-    function checkAdminApproval() {
-        // Aquí podrías hacer un fetch cada 3 segundos a una base de datos 
-        // o usar LocalStorage para pruebas locales
+    function checkAdminApproval(family) {
+        // Guardamos la familia para cuando el admin apruebe
+        sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
+        
         const interval = setInterval(() => {
-            const approval = localStorage.getItem("adminApproval");
-            if (approval === "true") {
+            if (localStorage.getItem("adminApproval") === "true") {
                 clearInterval(interval);
                 localStorage.removeItem("adminApproval");
                 window.location.href = "trivia.html";
             }
-        }, 3000);
+        }, 2000);
     }
 });

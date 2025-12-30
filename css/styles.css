@@ -6,7 +6,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Combinamos el gradiente con la imagen */
+
   background: linear-gradient(
       35deg,
       rgba(30, 41, 59, 0.5),
@@ -23,7 +23,6 @@ body {
   padding: 16px;
 }
 
-/* CONTENEDOR PRINCIPAL */
 .container {
   width: 100%;
   max-width: 420px;
@@ -35,7 +34,6 @@ body {
   text-align: center;
 }
 
-/* TÍTULOS Y TEXTO */
 h1,
 h2 {
   font-size: 1.3rem;
@@ -49,7 +47,6 @@ p {
   margin-bottom: 24px;
 }
 
-/* BOTONES */
 button {
   width: 100%;
   padding: 14px;
@@ -74,7 +71,6 @@ button.secondary {
   color: #082f49;
 }
 
-/* IMÁGENES */
 img {
   width: 100%;
   margin-top: 16px;
@@ -82,12 +78,15 @@ img {
   display: none;
 }
 
-/* INPUTS */
 input[type="file"] {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
 }
 
-/* MENSAJES */
+
 #statusMessage {
   margin-top: 16px;
   font-size: 0.9rem;

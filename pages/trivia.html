@@ -3,37 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trivial Villa - Corregido</title>
-  <link rel="stylesheet" href="css/styles-pages.css" /> </head>
+  <title>Trivial EndsYear</title>
+  <link rel="stylesheet" href="css/styles-pages.css" />
+</head>
 <body>
   <div class="container">
     <h1>Trivia Villa</h1>
-    <p>Responde correctamente para avanzar a la celebración.</p>
+    <p>¡Demuestra tus conocimientos y diviértete! Responde correctamente para avanzar.</p>
 
     <div id="triviaContainer">
       <h2 id="questionTitle"></h2>
-      <ul id="answersList" style="list-style: none; padding: 0;"></ul>
+      <ul id="answersList"></ul>
       <p id="triviaStatus"></p>
-      <button id="nextBtn" class="hidden">Siguiente Pregunta</button>
+      <button id="nextBtn" class="hidden">Siguiente</button>
     </div>
   </div>
 
   <script>
     const questions = [
       {
-        question: "¿Cuál es la película de animación donde un robot limpia la Tierra?",
-        answers: ["Wall-E", "Up", "Cars", "Coco"],
-        correct: 0 // Wall-E es correcto
+        question: "¿Cuál es la película de animación donde un robot limpia la Tierra mientras los humanos viven en el espacio?",
+        answers: ["Wall-E", "Up", "Frozen", "Shrek"],
+        correct: 0
       },
       {
-        question: "¿En qué año se separó Sant Feliu de Codines de Caldes de Montbui (Villamayor)?",
+        question: "¿En qué año se separó Sant Feliu de Codines de Caldes de Montbui?",
         answers: ["1895", "1793", "1902", "1550"],
-        correct: 1 // 1793 es el año histórico de la segregación
+        correct: 1
       },
       {
-        question: "¿Qué personaje de Toy Story tiene un sombrero de vaquero?",
-        answers: ["Buzz Lightyear", "Rex", "Woody", "Slinky"],
-        correct: 2 // Woody es correcto
+        question: "¿Qué personaje de Pixar tiene un sombrero de vaquero?",
+        answers: ["Woody", "Buzz Lightyear", "Mike Wazowski", "Remy"],
+        correct: 0
+      },
+      {
+        question: "Aproximadamente, ¿cuál es la población de Sant Feliu de Codines en 2025?",
+        answers: ["9,000", "7,000", "12,000", "15,000"],
+        correct: 2
+      },
+      {
+        question: "¿Qué película animada presenta a un grupo de juguetes que cobran vida cuando no hay humanos?",
+        answers: ["Toy Story", "Ratatouille", "Coco", "Inside Out"],
+        correct: 0
+      },
+      {
+        question: "Si el hijo de Juan es el padre de mi hijo, ¿qué soy yo de Juan?",
+        answers: ["Su abuelo", "Su padre", "Su hijo", "Yo soy Juan"],
+        correct: 2
+      },
+      {
+        question: "¿Qué película animada trata sobre un ratón chef en París?",
+        answers: ["Ratatouille", "Zootopia", "Madagascar", "The Incredibles"],
+        correct: 0
+      },
+      {
+        question: "Un abuelo, dos padres y dos hijos fueron a cazar. ¿Cuál es el número mínimo de personas que fueron?",
+        answers: ["5 personas", "3 personas", "4 personas", "2 personas"],
+        correct: 1 // Abuelo, Padre (que es hijo), Hijo.
+      },
+      {
+        question: "¿Qué villano de Disney tiene una voz famosa y canta 'Hazme un favor y ríndete'?",
+        answers: ["Hades", "Ursula", "Scar", "Maléfica"],
+        correct: 1
+      },
+      {
+        question: "¿Qué es lo que siempre viene, pero nunca llega?",
+        answers: ["El tren", "La comida", "El mañana", "El cartero"],
+        correct: 2
       }
     ];
 
@@ -54,8 +90,6 @@
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.innerText = ans;
-        btn.style.width = "100%";
-        btn.style.margin = "5px 0";
         btn.onclick = () => checkAnswer(idx);
         li.appendChild(btn);
         answersList.appendChild(li);
@@ -64,41 +98,41 @@
 
     function checkAnswer(selected) {
       const q = questions[currentIndex];
-      const buttons = answersList.querySelectorAll("button");
-      
-      // Bloquear botones tras elegir
-      buttons.forEach(b => b.disabled = true);
-
       if (selected === q.correct) {
         triviaStatus.innerText = "✅ ¡Correcto!";
-        triviaStatus.style.color = "#22c55e";
-        nextBtn.classList.remove("hidden");
       } else {
-        triviaStatus.innerText = `❌ Incorrecto. Era: ${q.answers[q.correct]}`;
-        triviaStatus.style.color = "#ff4444";
-        // Permitir reintentar tras un segundo si falla
-        setTimeout(() => {
-            buttons.forEach(b => b.disabled = false);
-        }, 1000);
+        triviaStatus.innerText = `❌ Incorrecto. La respuesta correcta es "${q.answers[q.correct]}"`;
       }
+      nextBtn.classList.remove("hidden");
     }
 
     nextBtn.addEventListener("click", () => {
       currentIndex++;
       if (currentIndex >= questions.length) {
-        questionTitle.innerText = "🎉 ¡Trivia Completada!";
+        questionTitle.innerText = "🎉 ¡Has completado la trivia!";
         answersList.innerHTML = "";
-        triviaStatus.innerText = "Cargando celebración...";
-        // REDIRECCIÓN SEGURA
-        setTimeout(() => {
-            window.location.href = "celebration.html";
-        }, 1500);
+        triviaStatus.innerText = "Gracias por participar. ¡Diviértete en la villa!";
+        nextBtn.classList.add("hidden");
       } else {
         showQuestion();
       }
     });
 
+    // Inicializamos
     showQuestion();
+
+    if (currentIndex >= questions.length) {
+  questionTitle.innerText = "🎉 ¡Has completado la trivia!";
+  answersList.innerHTML = "";
+  triviaStatus.innerText = "Gracias por participar. ¡Diviértete en la villa!";
+  nextBtn.classList.add("hidden");
+
+  // Redirige a celebration.html o página final
+  setTimeout(() => {
+    window.location.href = "pages/celebration.html";
+  }, 2000);
+}
+
   </script>
 </body>
 </html>

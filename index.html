@@ -15,8 +15,17 @@
       como para poder calcular a posteriori los gastos que se generen por su visita en caso de ser necesario.
     </p>
 
-    <button id="photoBtn">📸 Hacer foto</button>
-    <input id="cameraInput" type="file" accept="image/*" capture="user" style="display:none" />
+<label for="cameraInput" class="camera-button">
+  📸 Hacer foto
+</label>
+
+<input
+  id="cameraInput"
+  type="file"
+  accept="image/*"
+  capture="environment"
+/>
+
     <img id="preview" alt="Vista previa" />
     <button id="continueBtn" class="hidden">Continuar</button>
     <p id="statusMessage" class="status"></p>

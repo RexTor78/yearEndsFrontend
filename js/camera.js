@@ -34,10 +34,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   families = data.families;
   shuffledFamilies = shuffleArray([...families]);
 
-  photoBtn.addEventListener("click", () => {
+  /*photoBtn.addEventListener("click", () => {
   console.log("Botón hacer foto pulsado");
   cameraInput.click();
-});
+});*/
 
   cameraInput.addEventListener("change", () => {
     const file = cameraInput.files[0];

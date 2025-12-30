@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  /*const photoBtn = document.getElementById("photoBtn");*/
   const cameraInput = document.getElementById("cameraInput");
   const preview = document.getElementById("preview");
   const continueBtn = document.getElementById("continueBtn");
@@ -25,64 +26,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentIndex = 0;
   let confirmedFamily = null;
   let capturedImage = null;
+  let secondPhotoForSuspicious = false;
 
-  // Cargar datos del JSON
-  try {
-    const response = await fetch("families.json");
-    const data = await response.json();
-    families = data.families;
-    shuffledFamilies = shuffleArray([...families]);
-  } catch (error) {
-    console.error("Error cargando familias:", error);
-  }
 
-  // Utilidad para desordenar el array y simular "búsqueda"
-  function shuffleArray(array) {
-    return array.sort(() => Math.random() - 0.5);
-  }
+  const response = await fetch("families.json");
+  const data = await response.json();
+  families = data.families;
+  shuffledFamilies = shuffleArray([...families]);
 
- 
-cameraInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (file) {
+  /*photoBtn.addEventListener("click", () => {
+  console.log("Botón hacer foto pulsado");
+  cameraInput.click();
+});*/
+
+  cameraInput.addEventListener("change", () => {
+    const file = cameraInput.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
-    
-
-    statusMessage.innerText = "Cargando imagen...";
-
-    reader.onload = (event) => {
-   
-      preview.src = event.target.result;
- 
-      preview.style.display = "block"; 
-      
-
+    reader.onload = () => {
+      preview.src = reader.result;
+      preview.style.display = "block";
       continueBtn.classList.remove("hidden");
-      
-
-      statusMessage.innerText = "¡Foto capturada!";
-      capturedImage = event.target.result;
+      statusMessage.innerText = "";
+      capturedImage = reader.result;
     };
-    
     reader.readAsDataURL(file);
-  }
-});
-
+  });
 
   continueBtn.addEventListener("click", () => {
     if (!capturedImage) {
       statusMessage.innerText = "⚠️ Por favor, haga una foto primero.";
       return;
     }
-    sessionStorage.setItem("selfie", capturedImage);
-    statusMessage.innerText = "🧠 Analizando identidad...";
-    setTimeout(showNextFamily, 1500);
-  });
 
+    sessionStorage.setItem("selfie", capturedImage);
+
+    if (secondPhotoForSuspicious && confirmedFamily) {
+      showFinalSuspiciousApproval();
+      return;
+    }
+
+    statusMessage.innerText = "🧠 Analizando identidad...";
+    setTimeout(showNextFamily, 1000);
+  });
 
   function showNextFamily() {
     if (currentIndex >= shuffledFamilies.length) {
-      statusMessage.innerText = "❌ No hemos podido identificar su familia.";
+      statusMessage.innerText =
+        "❌ No hemos podido identificar su familia.";
       return;
     }
 
@@ -95,53 +87,21 @@ cameraInput.addEventListener("change", (e) => {
     familyModal.classList.remove("hidden");
   }
 
-
   confirmYes.onclick = () => {
     confirmedFamily = shuffledFamilies[currentIndex];
     familyModal.classList.add("hidden");
-    sessionStorage.setItem("identifiedFamily", JSON.stringify(confirmedFamily));
 
+    sessionStorage.setItem(
+      "identifiedFamily",
+      JSON.stringify(confirmedFamily)
+    );
+
+    // Excepción Can Talla L'Atalaya
     if (confirmedFamily.id === "CanTallaAtalaya") {
       showAtalayaMessage();
       return;
     }
 
-
-    const suspiciousMember = confirmedFamily.members.find(m => m.sospechoso === true);
-    if (suspiciousMember) {
-      showSuspiciousModal(suspiciousMember);
-    } else {
-      goToTrivia();
-    }
-  };
-
-  confirmNo.onclick = () => {
-    familyModal.classList.add("hidden");
-    currentIndex++;
-    showNextFamily();
-  };
-
-  function showSuspiciousModal(member) {
-    suspiciousImage.src = member.photo;
-    suspiciousImage.style.display = "block";
-    suspiciousText.innerHTML = `⚠️ <strong>ALERTA DE SEGURIDAD</strong><br><br>
-      Se ha detectado a <strong>${member.name}</strong>, marcado como sospechoso en nuestra base de datos.`;
-    suspiciousModal.classList.remove("hidden");
-  }
-
-  retryBtn.onclick = () => location.reload();
-  excludeBtn.onclick = () => goToTrivia();
-
-
-  function showAtalayaMessage() {
-    infoTitle.innerText = "Verificación Especial";
-    infoText.innerText = confirmedFamily.special_message[0];
-    infoModal.classList.remove("hidden");
-  }
-
-  continueBtnInfo.onclick = () => goToTrivia();
-
-  function goToTrivia() {
-    window.location.href = "trivia.html";
-  }
-});
+    // ¿Tiene sospechoso?
+    const suspiciousMember = confirmedFamily.members.find(
+      (m) => m.sospec

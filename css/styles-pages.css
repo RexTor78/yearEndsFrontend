@@ -11,7 +11,7 @@ body {
   align-items: center;
   justify-content: center;
   background: linear-gradient(35deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8)), 
-              url("img/backgroundcasa.jpg") center/cover no-repeat;
+              url("../img/backgroundcasa.jpg") center/cover no-repeat;
   color: #f8fafc;
   padding: 16px;
   animation: fadeIn 0.4s ease;

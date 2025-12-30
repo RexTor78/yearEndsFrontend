@@ -12,26 +12,22 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentIndex = 0;
     let capturedImage = null;
 
-    // 1. CARGA INMEDIATA
-    async function loadFamilies() {
-        try {
-            // Intentamos cargar desde la raíz
-            const response = await fetch("families.json"); 
-            const data = await response.json();
-            if (data.families && data.families.length > 0) {
+    // 1. CARGA SEGURA PARA MÓVIL
+    function loadData() {
+        fetch("families.json")
+            .then(response => response.json())
+            .then(data => {
                 shuffledFamilies = data.families.sort(() => Math.random() - 0.5);
-                console.log("Familias cargadas:", shuffledFamilies.length);
-            } else {
-                throw new Error("El JSON está vacío");
-            }
-        } catch (error) {
-            console.error("Error crítico:", error);
-            statusMessage.innerText = "⚠️ Error de conexión con la base de datos.";
-        }
+                console.log("Datos cargados listos");
+            })
+            .catch(err => {
+                console.error("Error cargando JSON:", err);
+                statusMessage.innerText = "Error de conexión. Recarga la página.";
+            });
     }
-    loadFamilies();
+    loadData();
 
-    // 2. CAPTURA DE FOTO
+    // 2. CAPTURA (Optimizado para memoria móvil)
     cameraInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -41,80 +37,83 @@ document.addEventListener("DOMContentLoaded", () => {
                 preview.style.display = "block";
                 continueBtn.classList.remove("hidden");
                 capturedImage = event.target.result;
-                statusMessage.innerText = "✅ Foto lista.";
+                statusMessage.innerText = "Foto lista.";
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // 3. BOTÓN CONTINUAR (Manejador único para evitar fallos en móvil)
+    // 3. CONTINUAR (Evitamos el cuelgue con un flujo síncrono controlado)
     continueBtn.onclick = (e) => {
         e.preventDefault();
         
-        // Verificación de seguridad
         if (shuffledFamilies.length === 0) {
-            statusMessage.innerText = "⏳ Cargando base de datos, espere un segundo...";
-            loadFamilies(); // Reintento de carga
+            statusMessage.innerText = "Cargando base de datos... intenta de nuevo en 2 segundos.";
+            loadData();
             return;
         }
 
         statusMessage.innerText = "🧠 Analizando rasgos faciales...";
         sessionStorage.setItem("selfie", capturedImage);
 
-        setTimeout(() => {
-            showPrediction();
-        }, 1200);
+        // Forzamos un pequeño delay para que el navegador pinte el mensaje antes de abrir el modal
+        window.setTimeout(() => {
+            ejecutarPrediccion();
+        }, 1500);
     };
 
-    // 4. LÓGICA DE LAS FAMILIAS Y EL TERCERO BLOQUEADO
-    function showPrediction() {
-        const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
-        
-        // CASO ESPECIAL: 3ª posición (índice 2)
-        if (currentIndex === 2) {
-            modalText.innerHTML = `
-                <b style="color:red">ACCESO RESTRINGIDO</b><br><br>
-                Identificados como: <b>${family.display_name}</b>.<br><br>
-                Su acceso requiere aprobación manual del administrador.
-            `;
-            confirmYes.innerText = "Solicitar Acceso";
-            confirmNo.style.display = "none";
+    function ejecutarPrediccion() {
+        // Si el modal no se abre, el error está aquí
+        try {
+            const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
+            
+            // Lógica de la 3ª familia (índice 2)
+            if (currentIndex === 2) {
+                modalText.innerHTML = `
+                    <b style="color:#ff4444">ACCESO RESTRINGIDO</b><br><br>
+                    Identificados como: <b>${family.display_name}</b>.<br><br>
+                    Su historial requiere aprobación del administrador.
+                `;
+                confirmYes.innerText = "Solicitar Acceso";
+                confirmNo.style.display = "none";
 
-            confirmYes.onclick = () => {
-                familyModal.classList.add("hidden");
-                statusMessage.innerHTML = "⏳ <span style='color:orange'>Esperando respuesta del administrador...</span>";
-                
-                // Guardamos la familia para la trivia
-                sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
-                
-                // Bucle de escucha al admin
-                const checkAdmin = setInterval(() => {
-                    if (localStorage.getItem("adminApproval") === "true") {
-                        clearInterval(checkAdmin);
-                        localStorage.removeItem("adminApproval");
-                        window.location.href = "trivia.html";
-                    }
-                }, 2000);
-            };
-        } else {
-            // Caso Normal
-            confirmNo.style.display = "inline-block";
-            confirmYes.innerText = "✅ Sí";
-            confirmNo.innerText = "❌ No";
-            modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
+                confirmYes.onclick = () => {
+                    familyModal.classList.add("hidden");
+                    statusMessage.innerHTML = "⏳ <span style='color:orange'>Esperando aprobación remota...</span>";
+                    
+                    sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
+                    
+                    // Escucha al administrador
+                    const interval = setInterval(() => {
+                        if (localStorage.getItem("adminApproval") === "true") {
+                            clearInterval(interval);
+                            localStorage.removeItem("adminApproval");
+                            window.location.href = "pages/trivia.html";
+                        }
+                    }, 2000);
+                };
+            } else {
+                // Caso Normal
+                confirmNo.style.display = "inline-block";
+                confirmYes.innerText = "✅ Sí";
+                confirmNo.innerText = "❌ No";
+                modalText.innerHTML = `Análisis de rasgos completado.<br><br>¿Sois la <b>${family.display_name}</b>?`;
 
-            confirmYes.onclick = () => {
-                sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
-                window.location.href = "trivia.html";
-            };
+                confirmYes.onclick = () => {
+                    sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
+                    window.location.href = "trivia.html";
+                };
 
-            confirmNo.onclick = () => {
-                familyModal.classList.add("hidden");
-                currentIndex++;
-                statusMessage.innerText = "Buscando otra coincidencia...";
-                setTimeout(showPrediction, 600);
-            };
+                confirmNo.onclick = () => {
+                    familyModal.classList.add("hidden");
+                    currentIndex++;
+                    statusMessage.innerText = "Buscando nueva coincidencia...";
+                    window.setTimeout(ejecutarPrediccion, 500);
+                };
+            }
+            familyModal.classList.remove("hidden");
+        } catch (err) {
+            statusMessage.innerText = "Error en el análisis. Intente de nuevo.";
         }
-        familyModal.classList.remove("hidden");
     }
 });

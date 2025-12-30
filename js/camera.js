@@ -1,9 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
-  // CONFIGURACIÓN
-  // Si usas GitHub Actions, el script de despliegue cambiará "REPLACE_ME_WITH_KEY" por tu clave real.
-  // Si prefieres probarlo ya, puedes pegar tu clave directamente aquí entre las comillas.
-  const IMGBB_API_KEY = "REPLACE_ME_WITH_KEY"; 
-
+document.addEventListener("DOMContentLoaded", async () => {
   const photoBtn = document.getElementById("photoBtn");
   const cameraInput = document.getElementById("cameraInput");
   const preview = document.getElementById("preview");
@@ -15,151 +10,95 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmYes = document.getElementById("confirmYes");
   const confirmNo = document.getElementById("confirmNo");
 
-  let capturedFile = null;
-  let predictions = [];
-  let currentPredictionIndex = 0;
+  const suspiciousModal = document.getElementById("suspiciousModal");
+  const suspiciousImage = document.getElementById("suspiciousImage");
+  const suspiciousText = document.getElementById("suspiciousText");
+  const retryBtn = document.getElementById("retryBtn");
+  const excludeBtn = document.getElementById("excludeBtn");
 
-  // =========================
-  // 1. ABRIR CÁMARA
-  // =========================
-  photoBtn.addEventListener("click", () => {
-    cameraInput.click();
-  });
+  const infoModal = document.getElementById("infoModal");
+  const infoTitle = document.getElementById("infoTitle");
+  const infoText = document.getElementById("infoText");
+  const continueBtnInfo = document.getElementById("continueBtnInfo");
 
-  // =========================
-  // 2. CAPTURA Y VISTA PREVIA
-  // =========================
+  let families = [];
+  let shuffledFamilies = [];
+  let currentIndex = 0;
+  let confirmedFamily = null;
+  let capturedImage = null;
+  let secondPhotoForSuspicious = false;
+
+
+  const response = await fetch("families.json");
+  const data = await response.json();
+  families = data.families;
+  shuffledFamilies = shuffleArray([...families]);
+
+  photoBtn.addEventListener("click", () => cameraInput.click());
+
   cameraInput.addEventListener("change", () => {
     const file = cameraInput.files[0];
     if (!file) return;
 
-    capturedFile = file;
     const reader = new FileReader();
     reader.onload = () => {
       preview.src = reader.result;
       preview.style.display = "block";
       continueBtn.classList.remove("hidden");
       statusMessage.innerText = "";
+      capturedImage = reader.result;
     };
     reader.readAsDataURL(file);
   });
 
-  // =========================
-  // 3. SUBIDA A IMGBB Y PROCESAMIENTO
-  // =========================
-  continueBtn.addEventListener("click", async () => {
-    if (!capturedFile) {
-      statusMessage.innerText = "⚠️ Por favor, capture una foto primero.";
+  continueBtn.addEventListener("click", () => {
+    if (!capturedImage) {
+      statusMessage.innerText = "⚠️ Por favor, haga una foto primero.";
       return;
     }
 
-    statusMessage.innerText = "🚀 Subiendo foto a la nube y analizando...";
-    continueBtn.disabled = true;
+    sessionStorage.setItem("selfie", capturedImage);
 
-    try {
-      // Preparar envío a ImgBB
-      const formData = new FormData();
-      formData.append("image", capturedFile);
-
-      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-        method: "POST",
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error("Error en la subida a ImgBB");
-      }
-
-      const imageUrl = data.data.url;
-
-      // GUARDAR URL PARA EL COLLAGE
-      let collagePhotos = JSON.parse(localStorage.getItem("collagePhotos") || "[]");
-      collagePhotos.push(imageUrl);
-      localStorage.setItem("collagePhotos", JSON.stringify(collagePhotos));
-
-      // SIMULACIÓN DE IA (Sustituye esto cuando tengas un backend real)
-      predictions = [
-        { 
-            family: "Familia García", 
-            confidence: 0.88, 
-            special_message: "¡Bienvenidos a la Villa!", 
-            needs_products: false 
-        },
-        { 
-            family: "Familia Rodríguez", 
-            confidence: 0.45, 
-            special_message: "Es un placer veros.", 
-            needs_products: true 
-        }
-      ];
-
-      currentPredictionIndex = 0;
-      showFamilyConfirmation(true);
-
-    } catch (error) {
-      console.error(error);
-      statusMessage.innerText = "❌ Error al subir la imagen. Verifica la API Key.";
-      continueBtn.disabled = false;
+    if (secondPhotoForSuspicious && confirmedFamily) {
+      showFinalSuspiciousApproval();
+      return;
     }
+
+    statusMessage.innerText = "🧠 Analizando identidad...";
+    setTimeout(showNextFamily, 1000);
   });
 
-  // =========================
-  // 4. LÓGICA DEL MODAL
-  // =========================
-  function getConfidenceMessage(confidence) {
-    if (confidence >= 0.75) return { level: "alta", icon: "🔐", title: "Coincidencia alta" };
-    if (confidence >= 0.5) return { level: "media", icon: "🔍", title: "Coincidencia probable" };
-    return { level: "baja", icon: "⚠️", title: "Coincidencia débil" };
-  }
-
-  function showFamilyConfirmation(isFirstTime = false) {
-    const prediction = predictions[currentPredictionIndex];
-
-    if (!prediction) {
-      familyModal.classList.add("hidden");
-      statusMessage.innerText = "❌ No hay más coincidencias disponibles.";
-      continueBtn.disabled = false;
+  function showNextFamily() {
+    if (currentIndex >= shuffledFamilies.length) {
+      statusMessage.innerText =
+        "❌ No hemos podido identificar su familia.";
       return;
     }
 
-    const info = getConfidenceMessage(prediction.confidence);
-    const percent = Math.round(prediction.confidence * 100);
-
+    const family = shuffledFamilies[currentIndex];
     modalText.innerHTML = `
-      <strong>${info.icon} ${info.title}</strong><br><br>
-      Familia: ${prediction.family}<br>
-      Confianza: ${percent}%<br><br>
+      <strong>Resultado del análisis</strong><br><br>
+      Creemos que sois la <strong>${family.display_name}</strong><br><br>
       ¿Es correcto?
     `;
-    
     familyModal.classList.remove("hidden");
   }
 
-  // Eventos de botones del modal (Definidos una sola vez)
-  confirmYes.addEventListener("click", () => {
-    const prediction = predictions[currentPredictionIndex];
-    sessionStorage.setItem("family", prediction.family);
-    sessionStorage.setItem("specialMessage", prediction.special_message || "");
-
-    // Redirección según lógica de negocio
-    if (prediction.needs_products) {
-      window.location.href = "pages/products.html";
-    } else {
-      window.location.href = "pages/trivia.html";
-    }
-  });
-
-  confirmNo.onclick = () => {
+  confirmYes.onclick = () => {
+    confirmedFamily = shuffledFamilies[currentIndex];
     familyModal.classList.add("hidden");
-    statusMessage.innerText = "Buscando otra coincidencia...";
-    currentPredictionIndex++;
-    
-    // Pequeño retardo para dar sensación de procesamiento
-    setTimeout(() => {
-      showFamilyConfirmation();
-    }, 1000);
-  };
 
-});
+    sessionStorage.setItem(
+      "identifiedFamily",
+      JSON.stringify(confirmedFamily)
+    );
+
+    // Excepción Can Talla L'Atalaya
+    if (confirmedFamily.id === "CanTallaAtalaya") {
+      showAtalayaMessage();
+      return;
+    }
+
+    // ¿Tiene sospechoso?
+    const suspiciousMember = confirmedFamily.members.find(
+      (m) => m.sospec

@@ -78,12 +78,15 @@ img {
   display: none;
 }
 
+#preview {
+  width: 100%;
+  margin-top: 16px;
+  border-radius: 12px;
+  display: none; /* Se mostrará vía JS */
+}
+
 input[type="file"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
-  height: 0;
+  display: none;
 }
 
 

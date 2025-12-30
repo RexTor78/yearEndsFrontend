@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const photoBtn = document.getElementById("photoBtn");
+  /*const photoBtn = document.getElementById("photoBtn");*/
   const cameraInput = document.getElementById("cameraInput");
   const preview = document.getElementById("preview");
   const continueBtn = document.getElementById("continueBtn");

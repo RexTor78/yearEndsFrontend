@@ -12,7 +12,9 @@ traits.forEach(t => {
 // FUNCIÓN CORREGIDA: Ahora coincide con el HTML
 function grantAccess() {
     console.log("Enviando aprobación de administrador...");
-    localStorage.setItem("adminApproval", "true");
+    
+    // Al añadir Date.now(), el valor siempre es distinto y el navegador FORZA la actualización
+    localStorage.setItem("adminApproval", "true_" + Date.now());
     
     const status = document.getElementById("adminStatus");
     status.innerText = "✅ ACCESO ENVIADO CORRECTAMENTE";

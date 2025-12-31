@@ -1,152 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trivial EndsYear</title>
   <link rel="stylesheet" href="../css/styles-pages.css" />
 </head>
-
 <body>
   <div class="container">
     <h1>Trivia Villa</h1>
-    <p>¡Demuestra tus conocimientos y diviértete! Responde correctamente para avanzar.</p>
+    <p>¡Demuestra tus conocimientos! Responde correctamente para avanzar.</p>
 
     <div id="triviaContainer">
-      <h2 id="questionTitle"></h2>
-      <ul id="answersList"></ul>
+      <h2 id="questionTitle">Cargando pregunta...</h2>
+      <ul id="answersList" style="list-style: none; padding: 0;"></ul>
       <p id="triviaStatus"></p>
-      <button id="nextBtn" class="hidden">Siguiente</button>
+      <button id="nextBtn" class="hidden" style="display:none; width: 100%; padding: 10px; margin-top: 20px;">Siguiente Pregunta</button>
     </div>
   </div>
 
   <script>
-const questions = [
-  {
-    question: "¿Cuál es la película de animación donde un robot limpia la Tierra mientras los humanos viven en el espacio?",
-    answers: ["Wall-E", "Up", "Frozen", "Shrek"],
-    correct: 0
-  },
-  {
-    question: "¿En qué año consiguió Sant Feliu de Codines su decreto de emancipación de Caldes?",
-    answers: ["1895", "1799", "1902", "1550"],
-    correct: 1
-  },
-  {
-    question: "¿Qué personaje de Pixar tiene un sombrero de vaquero?",
-    answers: ["Woody", "Buzz Lightyear", "Mike Wazowski", "Remy"],
-    correct: 0
-  },
-  {
-    question: "Aproximadamente, ¿cuál es la población actual de Sant Feliu de Codines?",
-    answers: ["4,000", "12,000", "7,000", "15,000"],
-    correct: 2
-  },
-  {
-    question: "¿Qué película animada presenta a un grupo de juguetes que cobran vida?",
-    answers: ["Toy Story", "Ratatouille", "Coco", "Inside Out"],
-    correct: 0
-  },
-  {
-    question: "¿Cuál es el ingrediente principal del Gazpacho?",
-    answers: ["Lechuga", "Tomate", "Cebolla", "Patata"],
-    correct: 1
-  },
-  {
-    question: "¿Qué película animada trata sobre un ratón chef en París?",
-    answers: ["Ratatouille", "Zootopia", "Madagascar", "The Incredibles"],
-    correct: 0
-  },
-  {
-    question: "¿Cuál de estos es un color primario?",
-    answers: ["Verde", "Morado", "Azul", "Naranja"],
-    correct: 2
-  },
-  {
-    question: "¿A qué casa pertenece Harry Potter en el Colegio Hogwarts?",
-    answers: ["Slytherin", "Hufflepuff", "Ravenclaw", "Gryffindor"],
-    correct: 3
-  },
-  {
-    question: "¿Cómo se llama el elfo doméstico que Harry Potter libera con un calcetín?",
-    answers: ["Kreacher", "Dobby", "Winky", "Hokey"],
-    correct: 1
-  },
-  {
-    question: "¿Cuál es el planeta más grande de nuestro sistema solar?",
-    answers: ["Marte", "Saturno", "Júpiter", "Venus"],
-    correct: 2
-  },
-  {
-    question: "¿Quién pintó la famosa 'Mona Lisa'?",
-    answers: ["Vincent van Gogh", "Leonardo da Vinci", "Pablo Picasso", "Claude Monet"],
-    correct: 1
-  },
-  {
-    question: "¿Cuál es el océano más grande del mundo?",
-    answers: ["Océano Atlántico", "Océano Índico", "Océano Ártico", "Océano Pacífico"],
-    correct: 3
-  },
-  {
-    question: "¿Qué gas necesitamos respirar los humanos para sobrevivir?",
-    answers: ["Nitrógeno", "Dióxido de carbono", "Oxígeno", "Helio"],
-    correct: 2
-  }
-];
-
-let currentIndex = 0;
-const questionTitle = document.getElementById("questionTitle");
-const answersList = document.getElementById("answersList");
-const triviaStatus = document.getElementById("triviaStatus");
-const nextBtn = document.getElementById("nextBtn");
-
-function showQuestion() {
-  const q = questions[currentIndex];
-  questionTitle.innerText = q.question;
-  answersList.innerHTML = "";
-  triviaStatus.innerText = "";
-  nextBtn.classList.add("hidden");
-
-  q.answers.forEach((ans, idx) => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.innerText = ans;
-    btn.onclick = () => checkAnswer(idx);
-    li.appendChild(btn);
-    answersList.appendChild(li);
-  });
-}
-
-function checkAnswer(selected) {
-  const q = questions[currentIndex];
-  if (selected === q.correct) {
-    triviaStatus.innerText = "✅ ¡Correcto!";
-  } else {
-    triviaStatus.innerText = `❌ Incorrecto. La respuesta correcta es "${q.answers[q.correct]}"`;
-  }
-  nextBtn.classList.remove("hidden");
-}
-
-nextBtn.addEventListener("click", () => {
-  currentIndex++;
-  if (currentIndex >= questions.length) {
-    questionTitle.innerText = "🎉 ¡Has completado la trivia!";
-    answersList.innerHTML = "";
-    triviaStatus.innerText = "Redirigiendo a la celebración...";
-    nextBtn.classList.add("hidden");
-
-    // Redirige automáticamente tras 2 segundos
-    setTimeout(() => {
-      window.location.href = "celebration.html";
-    }, 2000);
-  } else {
-    showQuestion();
-  }
-});
-
-// Inicializamos la primera pregunta
-showQuestion();
+    const questions = [
+      {
+        question: "¿Cuál es la película de animación donde un robot limpia la Tierra mientras los humanos viven en el espacio?",
+        answers: ["Wall-E", "Up", "Frozen", "Shrek"],
+        correct: 0
+      },
+      {
+        question: "¿En qué año consiguió Sant Feliu de Codines su decreto de emancipación de Caldes?",
+        answers: ["1895", "1799", "1902", "1550"],
+        correct: 1
+      },
+      {
+        question: "¿Qué personaje de Pixar tiene un sombrero de vaquero?",
+        answers: ["Buzz Lightyear", "Woody", "Lightning McQueen", "Mike Wazowski"],
+        correct: 1
+      }
+    ];
 
     let currentIndex = 0;
     const questionTitle = document.getElementById("questionTitle");
@@ -155,16 +45,21 @@ showQuestion();
     const nextBtn = document.getElementById("nextBtn");
 
     function showQuestion() {
+      // Limpiamos estado anterior
+      triviaStatus.innerText = "";
+      nextBtn.style.display = "none";
+      answersList.innerHTML = "";
+      
       const q = questions[currentIndex];
       questionTitle.innerText = q.question;
-      answersList.innerHTML = "";
-      triviaStatus.innerText = "";
-      nextBtn.classList.add("hidden");
 
       q.answers.forEach((ans, idx) => {
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.innerText = ans;
+        btn.style.width = "100%";
+        btn.style.margin = "5px 0";
+        btn.style.padding = "10px";
         btn.onclick = () => checkAnswer(idx);
         li.appendChild(btn);
         answersList.appendChild(li);
@@ -173,42 +68,38 @@ showQuestion();
 
     function checkAnswer(selected) {
       const q = questions[currentIndex];
+      // Deshabilitamos botones para que no cambien la respuesta
+      const buttons = answersList.querySelectorAll("button");
+      buttons.forEach(b => b.disabled = true);
+
       if (selected === q.correct) {
-        triviaStatus.innerText = "✅ ¡Correcto!";
+        triviaStatus.innerHTML = "<b style='color: #2ecc71;'>✅ ¡Correcto!</b>";
       } else {
-        triviaStatus.innerText = `❌ Incorrecto. La respuesta correcta es "${q.answers[q.correct]}"`;
+        triviaStatus.innerHTML = `<b style='color: #e74c3c;'>❌ Incorrecto.</b> La respuesta era: ${q.answers[q.correct]}`;
       }
-      nextBtn.classList.remove("hidden");
+      
+      nextBtn.style.display = "block"; // Mostramos botón siguiente
     }
 
     nextBtn.addEventListener("click", () => {
       currentIndex++;
-      if (currentIndex >= questions.length) {
+      if (currentIndex < questions.length) {
+        showQuestion();
+      } else {
         questionTitle.innerText = "🎉 ¡Has completado la trivia!";
         answersList.innerHTML = "";
-        triviaStatus.innerText = "Gracias por participar. ¡Diviértete en la villa!";
-        nextBtn.classList.add("hidden");
-      } else {
-        showQuestion();
+        triviaStatus.innerText = "Gracias por participar. ¡Bienvenidos a la villa!";
+        nextBtn.style.display = "none";
+        
+        // Redirigir a celebración tras 3 segundos
+        setTimeout(() => {
+            window.location.href = "celebration.html";
+        }, 3000);
       }
     });
 
-    // Inicializamos
-    showQuestion();
-
-    if (currentIndex >= questions.length) {
-      questionTitle.innerText = "🎉 ¡Has completado la trivia!";
-      answersList.innerHTML = "";
-      triviaStatus.innerText = "Gracias por participar. ¡Diviértete en la villa!";
-      nextBtn.classList.add("hidden");
-
-      // Redirige a celebration.html o página final
-      setTimeout(() => {
-        window.location.href = "celebration.html";
-      }, 2000);
-    }
-
+    // REGLA DE ORO: Ejecutamos la primera pregunta al cargar
+    document.addEventListener("DOMContentLoaded", showQuestion);
   </script>
 </body>
-
 </html>

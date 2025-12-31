@@ -117,33 +117,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const sospechoso = family.members.find(m => m.sospechoso === true);
     if (sospechoso && !esSegundoIntento) {
-      // NORMALIZADOR DE RUTAS (Ignora los ../ del JSON)
+      // 1. Limpiar cualquier rastro anterior
+      suspiciousImage.style.display = "none"; 
+      
+      // 2. Extraer solo el nombre del archivo (ej: "marcelo.png")
       const nombreFoto = sospechoso.photo.split('/').pop();
-      const rutaLimpia = `family_photos/${family.id}/${nombreFoto}`;
       
-      suspiciousImage.src = rutaLimpia;
-      suspiciousImage.style.display = "block";
-      suspiciousImage.style.margin = "0 auto 15px";
+      // 3. Construir la ruta real que tienes en GitHub
+      // Carpeta raíz / carpeta familia / nombre archivo
+      const rutaReal = `family_photos/${family.id}/${nombreFoto}`;
       
+      console.log("Intentando cargar foto desde:", rutaReal);
+      suspiciousImage.src = rutaReal;
+
+      // 4. FORZAR VISIBILIDAD cuando la imagen cargue
+      suspiciousImage.onload = function() {
+          this.style.display = "block";
+      };
+
+      // 5. Si la ruta falla, intentamos una ruta relativa simple
+      suspiciousImage.onerror = function() {
+          this.src = "./" + rutaReal;
+          this.style.display = "block";
+          console.error("Error cargando imagen, probando ruta alternativa");
+      };
+
       suspiciousText.innerHTML = `⚠️ <b>ALERTA DE SEGURIDAD</b><br><br>Integrante no reconocido: <b>${sospechoso.name}</b>.`;
       suspiciousModal.classList.remove("hidden");
-
-      document.getElementById("retryBtn").onclick = () => {
-        suspiciousModal.classList.add("hidden");
-        esSegundoIntento = true;
-        preview.style.display = "none";
-        continueBtn.classList.add("hidden");
-        cameraInput.value = ""; 
-        statusMessage.innerHTML = "<b style='color:yellow'>Repetid la foto sin el sospechoso.</b>";
-      };
-
-      document.getElementById("excludeBtn").onclick = () => {
-        suspiciousModal.classList.add("hidden");
-        finalizarTodo(family);
-      };
-    } else {
-      finalizarTodo(family);
-    }
   }
 
   // 6. GUARDAR ESTADO Y SALIR

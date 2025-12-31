@@ -6,25 +6,25 @@
   <title>Acceso a la Villa</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    /* Estilo para la selfie inicial */
-    #preview {
+    #preview { display: none; width: 100%; max-width: 400px; margin: 10px auto; border-radius: 10px; }
+    #suspiciousImage { 
       display: none; 
-      width: 100%;
-      max-width: 400px;
-      margin: 10px auto;
-      border-radius: 10px;
+      width: 200px; 
+      height: 200px; 
+      object-fit: cover; 
+      margin: 10px auto; 
+      border: 4px solid #ff4444; 
+      border-radius: 10px; 
+      background: #222;
     }
-
-    /* Estilo para la foto del sospechoso */
-    #suspiciousImage {
-      width: 200px;
-      height: 200px;
-      object-fit: cover;
-      display: none; /* JS lo activará */
-      margin: 0 auto;
-      border: 4px solid #ff4444;
-      border-radius: 10px;
-      background-color: #333;
+    .status-banner {
+      background: #b91c1c;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -32,11 +32,22 @@
   <div class="container">
     <h1>Acceso restringido</h1>
     <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display: none;" />
-    <p>Por favor, realicen una selfie conjunta para acceder.</p>
+    <p>Por favor, realicen una selfie conjunta para poder acceder y conceder los permisos necesarios.</p>
     <label for="cameraInput" class="camera-button">📸 Hacer foto</label>
     <img id="preview" alt="Vista previa" />
-    <button id="continueBtn" class="hidden">Continuar</button>
+    <button id="continueBtn" class="hidden" style="display:none; width:100%; margin-top:20px;">Continuar</button>
     <p id="statusMessage" class="status"></p>
+  </div>
+
+  <div id="familyModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Confirmación de familia</h2>
+      <p id="modalText"></p>
+      <div class="modal-buttons">
+        <button id="confirmYes">✅ Sí</button>
+        <button id="confirmNo">❌ No</button>
+      </div>
+    </div>
   </div>
 
   <div id="suspiciousModal" class="modal hidden">

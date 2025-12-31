@@ -35,23 +35,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (e) { console.error("Error JSON", e); }
 
   // 2. CAPTURA DE FOTO (ARREGLADO: Previsualización instantánea)
-  cameraInput.addEventListener("change", function(e) {
+  // 2. CAPTURA DE FOTO (Arregla la previsualización que fallaba)
+  cameraInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        // Asignamos la imagen y forzamos que se vea ignorando cualquier CSS previo
         preview.src = event.target.result;
-        preview.style.setProperty("display", "block", "important");
-        
+        preview.style.display = "block"; // Forzamos visibilidad
         continueBtn.classList.remove("hidden");
-        continueBtn.style.display = "block";
-        statusMessage.innerText = "✅ Foto lista.";
+        statusMessage.innerText = "✅ Foto capturada.";
         sessionStorage.setItem("selfie", event.target.result);
       };
       reader.readAsDataURL(file);
     }
   });
+
+  // 4. PROCESAR SOSPECHOSO (Lógica de ruta blindada)
+  function procesarConfirmacion(family) {
+    familyModal.classList.add("hidden");
+    
+    const sospechoso = family.members.find(m => m.sospechoso === true);
+    if (sospechoso && !esSegundoIntento) {
+      
+      // Construimos la ruta ignorando lo que diga el JSON
+      const nombreArchivo = sospechoso.photo.split('/').pop();
+      const rutaLimpia = `family_photos/${family.id}/${nombreArchivo}`;
+      
+      // Intentamos cargar desde la raíz del sitio
+      const base = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
+      suspiciousImage.src = base + rutaLimpia;
+      
+      suspiciousImage.onload = () => {
+          suspiciousImage.style.display = "block"; // Solo se muestra si carga
+      };
+
+      suspiciousImage.onerror = () => {
+          // Si falla, probamos ruta relativa simple
+          suspiciousImage.src = "./" + rutaLimpia;
+          suspiciousImage.style.display = "block";
+      };
+
+      suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: No reconocido: ${sospechoso.name}`;
+      suspiciousModal.classList.remove("hidden");
+
+      // ... resto de botones retryBtn y excludeBtn igual ...
+    } else {
+      finalizarTodo(family);
+    }
+  }
 
   continueBtn.onclick = () => {
     statusMessage.innerText = "🧠 Analizando rasgos faciales...";
@@ -98,6 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       suspiciousImage.style.display = "none";
       suspiciousText.innerHTML = "Acceso concedido. Vigilancia activada por nacionalidad dudosa.";
       suspiciousModal.classList.remove("hidden");
+      suspiciousImage.classList.add("show-img");
       document.getElementById("retryBtn").onclick = () => finalizarTodo(family);
       return;
     }

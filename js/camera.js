@@ -1,4 +1,3 @@
-// 1. IMPORTACIONES DE FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -10,7 +9,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // SELECTORES
   const cameraInput = document.getElementById("cameraInput");
   const preview = document.getElementById("preview");
   const continueBtn = document.getElementById("continueBtn");
@@ -27,32 +25,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentIndex = 0;
   let esSegundoIntento = false;
 
-  // 2. CARGA Y FILTRADO DE FAMILIAS (Para no repetir)
+  // 1. CARGA Y FILTRADO
   try {
     const response = await fetch("./families.json");
     const data = await response.json();
-    
-    // Recuperamos quién ya ha entrado de localStorage
     const yaEntraron = JSON.parse(localStorage.getItem("familiasEnCasa") || "[]");
-    
-    // Solo mostramos las que no han entrado
     familiasRestantes = data.families.filter(f => !yaEntraron.includes(f.id));
     familiasRestantes.sort(() => Math.random() - 0.5);
-    
-    console.log("Familias pendientes:", familiasRestantes.length);
-  } catch (e) {
-    console.error("Error cargando JSON", e);
-  }
+  } catch (e) { console.error("Error JSON", e); }
 
-  // 3. CAPTURA DE FOTO
-  cameraInput.addEventListener("change", (e) => {
+  // 2. CAPTURA DE FOTO (SOLUCIÓN PREVISUALIZACIÓN)
+  cameraInput.addEventListener("change", function(e) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
+        // Asignación directa y forzado de display
         preview.src = event.target.result;
         preview.style.display = "block";
         continueBtn.classList.remove("hidden");
+        continueBtn.style.display = "block";
+        statusMessage.innerText = "✅ Foto lista.";
         sessionStorage.setItem("selfie", event.target.result);
       };
       reader.readAsDataURL(file);
@@ -60,37 +53,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   continueBtn.onclick = () => {
-    statusMessage.innerText = "🧠 Analizando rasgos faciales...";
+    statusMessage.innerText = "🧠 Analizando...";
     setTimeout(showPrediction, 1000);
   };
 
-  // 4. LÓGICA DE PREDICCIÓN CON BLOQUEO EN EL Nº 3
+  // 3. PREDICCIÓN CON BLOQUEO EXCLUSIVO (SOLO Nº 3)
   function showPrediction() {
     if (familiasRestantes.length === 0) {
-      statusMessage.innerHTML = "⚠️ Todas las familias ya están dentro.";
+      statusMessage.innerText = "⚠️ No hay más familias pendientes.";
       return;
     }
-
     const family = familiasRestantes[currentIndex % familiasRestantes.length];
     let ordenLlegada = parseInt(localStorage.getItem("contadorLlegada") || "1");
 
-    // BLOQUEO SOLO PARA LA TERCERA FAMILIA
     if (ordenLlegada === 3) {
       confirmNo.style.display = "none";
       confirmYes.innerText = "Solicitar Permiso";
-      modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>Detectados como: <b>${family.display_name}</b>.<br>Son la 3ª familia en llegar. Esperen aprobación del administrador.`;
-      
+      modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>Detectados como: ${family.display_name}.<br>Son la 3ª familia, esperen aprobación.`;
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
-        statusMessage.innerHTML = "<div id='statusBanner' style='background:#b91c1c; color:white; padding:15px; border-radius:8px; font-weight:bold; text-align:center;'>⏳ ESPERANDO APROBACIÓN DEL ADMINISTRADOR...</div>";
+        statusMessage.innerHTML = "<div id='statusBanner' style='background:red; color:white; padding:10px;'>⏳ ESPERANDO ADMINISTRADOR...</div>";
         escucharAdmin(family);
       };
     } else {
-      // FLUJO NORMAL
       confirmNo.style.display = "inline-block";
       confirmYes.innerText = "✅ Sí";
       modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
-      
       confirmYes.onclick = () => procesarConfirmacion(family);
       confirmNo.onclick = () => {
         familyModal.classList.add("hidden");
@@ -101,15 +89,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     familyModal.classList.remove("hidden");
   }
 
-  // 5. PROCESAR SOSPECHOSOS Y RUTAS DE FOTO
+  // 4. PROCESAR SOSPECHOSO (RUTA BLINDADA)
   function procesarConfirmacion(family) {
     familyModal.classList.add("hidden");
-
     if (family.id === "CanTallaAtalaya") {
       suspiciousImage.style.display = "none";
-      suspiciousText.innerHTML = `Acceso concedido. Detectada nacionalidad dudosa. Serán vigilados estrictamente.`;
-      document.getElementById("excludeBtn").style.display = "none";
-      document.getElementById("retryBtn").innerText = "Entendido";
+      suspiciousText.innerHTML = "Acceso concedido. Vigilancia activada por nacionalidad dudosa.";
       suspiciousModal.classList.remove("hidden");
       document.getElementById("retryBtn").onclick = () => finalizarTodo(family);
       return;
@@ -117,41 +102,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const sospechoso = family.members.find(m => m.sospechoso === true);
     if (sospechoso && !esSegundoIntento) {
-      // 1. Limpiar cualquier rastro anterior
-      suspiciousImage.style.display = "none"; 
-      
-      // 2. Extraer solo el nombre del archivo (ej: "marcelo.png")
+      // Normalizamos ruta: carpeta_familias / ID_familia / archivo
       const nombreFoto = sospechoso.photo.split('/').pop();
+      const rutaCorrecta = `family_photos/${family.id}/${nombreFoto}`;
       
-      // 3. Construir la ruta real que tienes en GitHub
-      // Carpeta raíz / carpeta familia / nombre archivo
-      const rutaReal = `family_photos/${family.id}/${nombreFoto}`;
+      suspiciousImage.src = rutaCorrecta;
+      suspiciousImage.onload = () => { suspiciousImage.style.display = "block"; };
+      suspiciousImage.onerror = () => { suspiciousImage.src = "./" + rutaCorrecta; };
       
-      console.log("Intentando cargar foto desde:", rutaReal);
-      suspiciousImage.src = rutaReal;
-
-      // 4. FORZAR VISIBILIDAD cuando la imagen cargue
-      suspiciousImage.onload = function() {
-          this.style.display = "block";
-      };
-
-      // 5. Si la ruta falla, intentamos una ruta relativa simple
-      suspiciousImage.onerror = function() {
-          this.src = "./" + rutaReal;
-          this.style.display = "block";
-          console.error("Error cargando imagen, probando ruta alternativa");
-      };
-
-      suspiciousText.innerHTML = `⚠️ <b>ALERTA DE SEGURIDAD</b><br><br>Integrante no reconocido: <b>${sospechoso.name}</b>.`;
+      suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: No reconocido: ${sospechoso.name}`;
       suspiciousModal.classList.remove("hidden");
+
+      document.getElementById("retryBtn").onclick = () => {
+        suspiciousModal.classList.add("hidden");
+        esSegundoIntento = true;
+        preview.style.display = "none";
+        continueBtn.classList.add("hidden");
+        cameraInput.value = "";
+        statusMessage.innerHTML = "<b>Repetid la foto sin el sospechoso.</b>";
+      };
+      document.getElementById("excludeBtn").onclick = () => finalizarTodo(family);
+    } else {
+      finalizarTodo(family);
+    }
   }
 
-  // 6. GUARDAR ESTADO Y SALIR
+  // 5. FINALIZAR Y DESCARTAR
   function finalizarTodo(family) {
     let orden = parseInt(localStorage.getItem("contadorLlegada") || "1");
     localStorage.setItem("contadorLlegada", (orden + 1).toString());
 
-    // Añadir a familias que ya están dentro
     const yaEntraron = JSON.parse(localStorage.getItem("familiasEnCasa") || "[]");
     yaEntraron.push(family.id);
     localStorage.setItem("familiasEnCasa", JSON.stringify(yaEntraron));
@@ -160,19 +140,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "pages/trivia.html";
   }
 
-  // 7. ESCUCHA FIREBASE
   function escucharAdmin(family) {
-    const approvalRef = ref(db, 'accessControl/adminApproval');
-    onValue(approvalRef, (snapshot) => {
+    onValue(ref(db, 'accessControl/adminApproval'), (snapshot) => {
       const data = snapshot.val();
       if (data && data.status === "true") {
         set(ref(db, 'accessControl/adminApproval'), { status: "false" });
-        const banner = document.getElementById("statusBanner");
-        if (banner) {
-          banner.style.background = "#15803d";
-          banner.innerText = "✅ ACCESO AUTORIZADO";
-        }
-        setTimeout(() => procesarConfirmacion(family), 1500);
+        procesarConfirmacion(family);
       }
     });
   }

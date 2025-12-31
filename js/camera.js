@@ -14,19 +14,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let shuffledFamilies = [];
   let currentIndex = 0;
-  let capturedImage = null;
-  let esSegundoIntento = false; // Control para el reintento de foto sospechosa
+  let esSegundoIntento = false;
 
-  // 1. CARGA DE DATOS
+  // 1. CARREGA DE DADES
   try {
     const response = await fetch("./families.json");
     const data = await response.json();
     shuffledFamilies = data.families.sort(() => Math.random() - 0.5);
   } catch (e) { 
-    console.error("Error al cargar JSON"); 
+    console.error("Error carregant JSON"); 
   }
 
-  // 2. CAPTURA Y PREVISUALIZACIÓN INICIAL
+  // 2. CAPTURA DE FOTO
   cameraInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -35,38 +34,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         preview.src = event.target.result;
         preview.style.display = "block";
         continueBtn.classList.remove("hidden");
-        capturedImage = event.target.result;
-        statusMessage.innerText = esSegundoIntento ? "✅ Nueva foto capturada." : "✅ Foto lista.";
+        statusMessage.innerText = "✅ Foto lesta per analitzar.";
       };
       reader.readAsDataURL(file);
     }
   });
 
   continueBtn.onclick = () => {
-    statusMessage.innerText = "🧠 Analizando rasgos faciales...";
+    statusMessage.innerText = "🧠 Analitzant trets facials...";
     setTimeout(showPrediction, 1200);
   };
 
-  // 3. PREDICCIÓN Y LÓGICA DE BLOQUEO
+  // 3. PREDICCIÓ I BLOQUEIG 3ª FAMÍLIA
   function showPrediction() {
     const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
     let ordenLlegada = parseInt(localStorage.getItem("contadorLlegada") || "1");
 
     if (ordenLlegada === 3) {
-      // Bloqueo 3ª Familia
+      // Cas de bloqueig (3ª família)
       confirmNo.style.display = "none";
-      confirmYes.innerText = "Solicitar Permiso";
-      modalText.innerHTML = `<b style="color:red">ACCESO RESTRINGIDO</b><br><br>Son la 3ª familia en llegar. Esperen aprobación del administrador.`;
+      confirmYes.innerText = "Sol·licitar Permís";
+      modalText.innerHTML = `<b style="color:red">ACCÉS RESTRINGIT</b><br><br>Sou la 3ª família. Espereu l'aprovació de l'administrador.`;
+      
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
-        statusMessage.innerHTML = "<div style='color:orange; font-weight:bold;'>⏳ Esperando al administrador...</div>";
+        statusMessage.innerHTML = "<div style='background: #b91c1c; color: white; padding: 10px; border-radius: 5px;'>⏳ Avisant l'administrador... Espereu confirmació a la pantalla.</div>";
         escucharAdmin(family);
       };
     } else {
-      // Flujo Normal
+      // Flux normal
       confirmNo.style.display = "inline-block";
       confirmYes.innerText = "✅ Sí";
-      modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
+      modalText.innerHTML = `¿Sou la família <b>${family.display_name}</b>?`;
       confirmYes.onclick = () => procesarConfirmacion(family);
       confirmNo.onclick = () => {
         familyModal.classList.add("hidden");
@@ -77,49 +76,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     familyModal.classList.remove("hidden");
   }
 
-  // 4. PROCESAR CONFIRMACIÓN (SOSPECHOSOS Y ATALAYA)
+  // 4. LÒGICA DE SOSPETXOSOS I ATALAYA
   function procesarConfirmacion(family) {
     familyModal.classList.add("hidden");
 
-    // CASO ATALAYA
+    // CAS ESPECIAL: ATALAYA
     if (family.id === "CanTallaAtalaya") {
       suspiciousImage.style.display = "none";
-      suspiciousText.innerHTML = `Se les ha concedido acceso a la villa, pero el sistema ha detectado un integrante de <b>nacionalidad altamente dudosa</b>. Serán vigilados.`;
-      document.getElementById("retryBtn").innerText = "Entendido";
+      suspiciousText.innerHTML = `S'ha concedit l'accés, però hem detectat un integrant de <b>nacionalitat altament dubtosa</b>. Per seguretat, seran vigilats.`;
+      const retryBtn = document.getElementById("retryBtn");
+      retryBtn.innerText = "Entès";
       document.getElementById("excludeBtn").style.display = "none";
       suspiciousModal.classList.remove("hidden");
-      document.getElementById("retryBtn").onclick = () => finalizarTodo(family);
+      retryBtn.onclick = () => finalizarTodo(family);
       return;
     }
 
-    // CASO SOSPECHOSO
+    // CAS SOSPETXÓS
     const sospechoso = family.members.find(m => m.sospechoso === true);
-    
-    // Si hay sospechoso y NO es el segundo intento, mostramos modal
     if (sospechoso && !esSegundoIntento) {
-      // ASIGNACIÓN DE LA FOTO (Aquí está la corrección de ruta)
-      // Como el JS suele estar en /js/ y las fotos en /family_photos/, aseguramos ruta relativa
-      suspiciousImage.src = "./" + sospechoso.photo; 
+      // Corregim la ruta de la foto per si estàs en una subcarpeta
+      suspiciousImage.src = "./" + sospechoso.photo;
       suspiciousImage.style.display = "block";
-      
-      suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: Integrante no reconocido: <b>${sospechoso.name}</b>.`;
+      suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: Integrant no reconegut: <b>${sospechoso.name}</b>.`;
       
       document.getElementById("retryBtn").innerText = "📸 Repetir Foto";
       document.getElementById("excludeBtn").style.display = "inline-block";
-      document.getElementById("excludeBtn").innerText = "❌ Dejar fuera";
-      
       suspiciousModal.classList.remove("hidden");
 
-      // Lógica de Repetir Foto
       document.getElementById("retryBtn").onclick = () => {
         suspiciousModal.classList.add("hidden");
         esSegundoIntento = true;
-        // Resetear interfaz para nueva foto
         preview.style.display = "none";
         continueBtn.classList.add("hidden");
-        statusMessage.innerHTML = "<b style='color:yellow'>Por favor, repitan la foto sin el sospechoso.</b>";
-        // Desplazar scroll al botón de cámara para ayudar al usuario
-        window.scrollTo(0, 0);
+        statusMessage.innerHTML = "<b style='color:yellow'>Repetiu la selfie sense l'integrant no autoritzat.</b>";
       };
 
       document.getElementById("excludeBtn").onclick = () => {
@@ -131,6 +121,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // 5. FINALITZACIÓ I REDIRECCIÓ
   function finalizarTodo(family) {
     let orden = parseInt(localStorage.getItem("contadorLlegada") || "1");
     localStorage.setItem("contadorLlegada", (orden + 1).toString());
@@ -138,13 +129,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "pages/trivia.html";
   }
 
+  // 6. ESCULTA DE L'ADMIN (AQUÍ ESTAVA L'ERROR)
   function escucharAdmin(family) {
+    // Netegem qualsevol aprovació antiga abans de començar
+    localStorage.removeItem("adminApproval");
+
     const interval = setInterval(() => {
-      if (localStorage.getItem("adminApproval") === "true") {
+      const approval = localStorage.getItem("adminApproval");
+      if (approval === "true") {
         clearInterval(interval);
-        localStorage.removeItem("adminApproval");
-        procesarConfirmacion(family);
+        localStorage.removeItem("adminApproval"); // Netegem per al següent
+        
+        statusMessage.innerHTML = "<b style='color:green'>✅ ACCÉS CONCEDIT PER L'ADMINISTRADOR!</b>";
+        
+        // Després d'aprovar, passem pel filtre d'Atalaya o sospitosos
+        setTimeout(() => {
+          procesarConfirmacion(family);
+        }, 1500);
       }
-    }, 2000);
+    }, 1500); // Revisem cada 1.5 segons
   }
 });

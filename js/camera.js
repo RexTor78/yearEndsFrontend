@@ -35,19 +35,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error cargando familias:", e);
   }
 
-  // EVENTO CÁMARA (Blindado para previsualización)
-  cameraInput.addEventListener("change", function() {
-    const file = this.files[0];
+  cameraInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
     if (file) {
+      console.log("Archivo detectado:", file.name);
       const reader = new FileReader();
-      reader.onload = (e) => {
-        preview.src = e.target.result;
-        preview.style.display = "block";
+      
+      reader.onload = (event) => {
+        // Asignamos el resultado a la imagen de previsualización
+        preview.src = event.target.result;
+        preview.style.display = "block"; // Forzamos visibilidad
+        
+        // Mostramos el botón de continuar
         continueBtn.classList.remove("hidden");
-        statusMessage.innerText = "✅ Foto capturada correctamente.";
-        // Guardamos la foto para la página final
-        sessionStorage.setItem("selfie", e.target.result);
+        continueBtn.style.display = "block"; 
+        
+        statusMessage.innerText = "✅ Foto cargada correctamente.";
+        
+        // Guardamos en sessionStorage para la celebración final
+        sessionStorage.setItem("selfie", event.target.result);
       };
+
+      reader.onerror = (err) => {
+        console.error("Error al leer el archivo:", err);
+        statusMessage.innerText = "❌ Error al cargar la foto. Inténtalo de nuevo.";
+      };
+
       reader.readAsDataURL(file);
     }
   });

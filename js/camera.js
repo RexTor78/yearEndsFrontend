@@ -122,43 +122,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 2. CASO SOSPECHOSO
     // 2. CASO SOSPECHOSO
     const sospechoso = family.members.find(m => m.sospechoso === true);
-    if (sospechoso && !esSegundoIntento) {
-      // 1. Limpiamos src previo para evitar que se vea la foto de la familia anterior
-      suspiciousImage.src = ""; 
+   if (sospechoso && !esSegundoIntento) {
+      suspiciousImage.src = ""; // Limpiamos imagen previa
 
-      // 2. Normalizamos la ruta (quitamos slash inicial si existe)
-      let rutaLimpia = sospechoso.photo.replace(/^\//, ''); 
+      // --- NORMALIZADOR DE RUTAS ---
+      // 1. Obtenemos el nombre del archivo (ej: "foto.png")
+      const nombreArchivo = sospechoso.photo.split('/').pop();
+      // 2. Obtenemos el ID de la familia (que coincide con el nombre de tu carpeta)
+      const carpetaFamilia = family.id; 
       
-      // 3. Intentamos cargar. Usamos la URL completa del sitio para máxima compatibilidad
-      const baseURL = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-      suspiciousImage.src = baseURL + rutaLimpia;
+      // 3. Construimos la ruta limpia: carpeta_raiz / nombre_familia / archivo
+      const rutaCorrecta = `family_photos/${carpetaFamilia}/${nombreArchivo}`;
+      
+      console.log("Intentando cargar foto desde:", rutaCorrecta);
+      suspiciousImage.src = rutaCorrecta;
 
-      // Si la ruta anterior falla, el onerror prueba la ruta relativa clásica
+      // Si por lo que sea falla, intentamos la ruta relativa simple como último recurso
       suspiciousImage.onerror = () => {
-          console.log("Reintentando ruta relativa para:", rutaLimpia);
-          suspiciousImage.src = "./" + rutaLimpia;
-          // Si vuelve a fallar, quitamos el error para no entrar en bucle
-          suspiciousImage.onerror = null; 
+          console.error("Fallo ruta 1, reintentando...");
+          suspiciousImage.src = "./" + rutaCorrecta;
+          suspiciousImage.onerror = null;
       };
 
-      // 4. Solo mostramos el modal cuando la imagen haya cargado (evita parpadeos)
       suspiciousImage.onload = () => {
           suspiciousImage.style.display = "block";
-          suspiciousImage.style.opacity = "1";
+          suspiciousImage.style.margin = "0 auto";
       };
       
       suspiciousText.innerHTML = `⚠️ <b>ALERTA DE SEGURIDAD</b><br><br>Integrante no reconocido: <b>${sospechoso.name}</b>.`;
       suspiciousModal.classList.remove("hidden");
 
+      // Botón Reintentar
       document.getElementById("retryBtn").onclick = () => {
           suspiciousModal.classList.add("hidden");
-          esSegundoIntento = true; // Marcamos para que a la próxima pase
+          esSegundoIntento = true; 
           preview.style.display = "none";
           continueBtn.classList.add("hidden");
-          cameraInput.value = ""; // Reset de cámara
-          statusMessage.innerHTML = "<b style='color:yellow'>Repetid la foto sin el sospechoso para entrar.</b>";
+          cameraInput.value = ""; 
+          statusMessage.innerHTML = "<b style='color:yellow'>Repetid la foto sin el sospechoso.</b>";
       };
 
+      // Botón Excluir
       document.getElementById("excludeBtn").onclick = () => {
         suspiciousModal.classList.add("hidden");
         finalizarTodo(family);

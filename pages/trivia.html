@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trivial EndsYear</title>
+  <title>Trivial Villa</title>
   <link rel="stylesheet" href="../css/styles-pages.css" />
 </head>
 <body>
   <div class="container">
     <h1>Trivia Villa</h1>
-    <p>¡Demuestra tus conocimientos! Responde correctamente para avanzar.</p>
+    <p>Responde correctamente para avanzar.</p>
 
     <div id="triviaContainer">
       <h2 id="questionTitle">Cargando pregunta...</h2>
       <ul id="answersList" style="list-style: none; padding: 0;"></ul>
       <p id="triviaStatus"></p>
-      <button id="nextBtn" class="hidden" style="display:none; width: 100%; padding: 10px; margin-top: 20px;">Siguiente Pregunta</button>
+      <button id="nextBtn" style="display:none; width: 100%; padding: 12px; margin-top: 20px; cursor: pointer; background-color: #3498db; color: white; border: none; border-radius: 8px;">Siguiente Pregunta</button>
     </div>
   </div>
 
@@ -35,71 +35,127 @@
         question: "¿Qué personaje de Pixar tiene un sombrero de vaquero?",
         answers: ["Buzz Lightyear", "Woody", "Lightning McQueen", "Mike Wazowski"],
         correct: 1
+      },
+      {
+        question: "¿Cuál de estos es un ingrediente tradicional de la crema catalana?",
+        answers: ["Canela", "Chocolate", "Menta", "Fresa"],
+        correct: 0
+      },
+      {
+        question: "¿Cómo se llama el perro de la familia?",
+        answers: ["Max", "Toby", "Rocky", "Nala"],
+        correct: 3
+      },
+      {
+        question: "¿Cuál es el color favorito del anfitrión?",
+        answers: ["Azul", "Verde", "Rojo", "Amarillo"],
+        correct: 0
+      },
+      {
+        question: "¿Qué ciudad visitó la familia en sus últimas vacaciones?",
+        answers: ["Londres", "París", "Roma", "Nueva York"],
+        correct: 1
+      },
+      {
+        question: "¿Cuántos años cumple la abuela este año?",
+        answers: ["70", "75", "80", "85"],
+        correct: 2
+      },
+      {
+        question: "¿Cuál es el plato estrella de las reuniones familiares?",
+        answers: ["Paella", "Canelones", "Barbacoa", "Sushi"],
+        correct: 1
+      },
+      {
+        question: "¿Qué deporte practica el hijo mayor?",
+        answers: ["Fútbol", "Baloncesto", "Tenis", "Natación"],
+        correct: 0
+      },
+      {
+        question: "¿Cuál es la serie favorita que todos ven juntos?",
+        answers: ["Stranger Things", "Friends", "The Crown", "La Casa de Papel"],
+        correct: 1
+      },
+      {
+        question: "¿En qué mes se celebra el aniversario de los padres?",
+        answers: ["Mayo", "Junio", "Septiembre", "Diciembre"],
+        correct: 2
+      },
+      {
+        question: "¿Qué instrumento musical hay en el salón?",
+        answers: ["Guitarra", "Piano", "Violín", "Flauta"],
+        correct: 1
+      },
+      {
+        question: "¿Cuál es la tradición principal de esta noche?",
+        answers: ["Cantar", "Bailar", "Hacer la Trivia", "Dormir pronto"],
+        correct: 2
       }
     ];
 
     let currentIndex = 0;
-    const questionTitle = document.getElementById("questionTitle");
-    const answersList = document.getElementById("answersList");
-    const triviaStatus = document.getElementById("triviaStatus");
-    const nextBtn = document.getElementById("nextBtn");
 
-    function showQuestion() {
-      // Limpiamos estado anterior
-      triviaStatus.innerText = "";
-      nextBtn.style.display = "none";
-      answersList.innerHTML = "";
-      
-      const q = questions[currentIndex];
-      questionTitle.innerText = q.question;
+    function renderQuestion() {
+      const qTitle = document.getElementById("questionTitle");
+      const aList = document.getElementById("answersList");
+      const tStatus = document.getElementById("triviaStatus");
+      const nBtn = document.getElementById("nextBtn");
 
-      q.answers.forEach((ans, idx) => {
+      aList.innerHTML = "";
+      tStatus.innerText = "";
+      nBtn.style.display = "none";
+
+      if (currentIndex >= questions.length) {
+        showFinalMessage();
+        return;
+      }
+
+      const currentQ = questions[currentIndex];
+      qTitle.innerText = currentQ.question;
+
+      currentQ.answers.forEach((ans, idx) => {
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.innerText = ans;
         btn.style.width = "100%";
-        btn.style.margin = "5px 0";
-        btn.style.padding = "10px";
-        btn.onclick = () => checkAnswer(idx);
+        btn.style.margin = "8px 0";
+        btn.style.padding = "12px";
+        btn.style.cursor = "pointer";
+        
+        btn.onclick = () => {
+          const allButtons = aList.querySelectorAll("button");
+          allButtons.forEach(b => b.disabled = true);
+
+          if (idx === currentQ.correct) {
+            tStatus.innerHTML = "<b style='color: #2ecc71;'>✅ ¡Correcto!</b>";
+          } else {
+            tStatus.innerHTML = `<b style='color: #e74c3c;'>❌ Incorrecto.</b>`;
+          }
+          nBtn.style.display = "block";
+        };
+        
         li.appendChild(btn);
-        answersList.appendChild(li);
+        aList.appendChild(li);
       });
     }
 
-    function checkAnswer(selected) {
-      const q = questions[currentIndex];
-      // Deshabilitamos botones para que no cambien la respuesta
-      const buttons = answersList.querySelectorAll("button");
-      buttons.forEach(b => b.disabled = true);
-
-      if (selected === q.correct) {
-        triviaStatus.innerHTML = "<b style='color: #2ecc71;'>✅ ¡Correcto!</b>";
-      } else {
-        triviaStatus.innerHTML = `<b style='color: #e74c3c;'>❌ Incorrecto.</b> La respuesta era: ${q.answers[q.correct]}`;
-      }
+    function showFinalMessage() {
+      document.getElementById("questionTitle").innerText = "🎉 ¡Trivia Completada!";
+      document.getElementById("answersList").innerHTML = "";
+      document.getElementById("triviaStatus").innerText = "¡Bienvenidos a la villa! Redirigiendo...";
+      document.getElementById("nextBtn").style.display = "none";
       
-      nextBtn.style.display = "block"; // Mostramos botón siguiente
+      setTimeout(() => {
+        window.location.href = "celebration.html";
+      }, 3000);
     }
 
-    nextBtn.addEventListener("click", () => {
+    document.getElementById("nextBtn").onclick = () => {
       currentIndex++;
-      if (currentIndex < questions.length) {
-        showQuestion();
-      } else {
-        questionTitle.innerText = "🎉 ¡Has completado la trivia!";
-        answersList.innerHTML = "";
-        triviaStatus.innerText = "Gracias por participar. ¡Bienvenidos a la villa!";
-        nextBtn.style.display = "none";
-        
-        // Redirigir a celebración tras 3 segundos
-        setTimeout(() => {
-            window.location.href = "celebration.html";
-        }, 3000);
-      }
-    });
+      renderQuestion();
+    };
 
-    // REGLA DE ORO: Ejecutamos la primera pregunta al cargar
-    document.addEventListener("DOMContentLoaded", showQuestion);
+    window.onload = renderQuestion;
   </script>
 </body>
 </html>

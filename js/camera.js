@@ -142,18 +142,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // 6. FINALIZAR (Suma contador y redirige)
+  // 6. GUARDAR ESTADO Y SALIR (CORREGIDO PARA REDIRECCIÓN)
   function finalizarTodo(family) {
-    // Contador de llegada
+    console.log("Finalizando proceso para:", family.display_name);
+
+    // Guardamos el turno de llegada
     let orden = parseInt(localStorage.getItem("contadorLlegada") || "1");
     localStorage.setItem("contadorLlegada", (orden + 1).toString());
 
-    // Guardar familia que ya entró
+    // Añadimos a la lista de familias que ya están dentro
     const yaEntraron = JSON.parse(localStorage.getItem("familiasEnCasa") || "[]");
     yaEntraron.push(family.id);
     localStorage.setItem("familiasEnCasa", JSON.stringify(yaEntraron));
 
-    // Sesión y Redirección
+    // Guardamos la familia identificada para que la trivia sepa quiénes son
     sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
+
+    // REDIRECCIÓN: Prueba con la ruta directa. 
+    // Si tu archivo trivia.html está dentro de una carpeta llamada 'pages', déjalo así.
+    // Si está en la misma carpeta que el index, quita el "pages/".
     window.location.href = "pages/trivia.html";
   }
 

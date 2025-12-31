@@ -216,6 +216,7 @@ input[type="file"] {
 }
 
 #suspiciousImage {
+    display: block !important;
     width: 150px;
     height: 150px;
     object-fit: cover;

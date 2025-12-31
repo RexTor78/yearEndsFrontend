@@ -129,37 +129,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "pages/trivia.html";
   }
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  databaseURL: "https://villaaccess-73af4-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 function escucharAdmin(family) {
-    console.log("Esperando señal del administrador...");
+    console.log("Escuchando aprobación desde la nube...");
+    const approvalRef = ref(db, 'accessControl/adminApproval');
 
-    // Definimos la función que reaccionará al cambio en el almacenamiento
-    const handleStorageChange = (e) => {
-        if (e.key === "adminApproval" && e.newValue) {
-            try {
-                const data = JSON.parse(e.newValue);
-                if (data.status === "true") {
-                    console.log("¡Señal recibida!");
-                    
-                    // Dejamos de escuchar para no repetir el proceso
-                    window.removeEventListener('storage', handleStorageChange);
-                    
-                    // Feedback visual en la pantalla
-                    const banner = document.getElementById("statusBanner");
-                    if (banner) {
-                        banner.style.background = "#15803d";
-                        banner.innerText = "✅ PERMISO CONCEDIDO";
-                    }
+    // Firebase nos avisa automáticamente cuando tú cambies el valor
+    onValue(approvalRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.status === "true") {
+            console.log("¡Señal recibida desde el admin!");
 
-                    // Procedemos
-                    setTimeout(() => {
-                        procesarConfirmacion(family);
-                    }, 1000);
-                }
-            } catch (err) {
-                console.error("Error al procesar la señal del admin", err);
+            // Limpiamos la señal en la nube para que no se quede abierta
+            set(ref(db, 'accessControl/adminApproval'), { status: "false" });
+
+            const banner = document.getElementById("statusBanner");
+            if (banner) {
+                banner.style.background = "#15803d";
+                banner.innerText = "✅ PERMISO CONCEDIDO";
             }
+
+            setTimeout(() => {
+                procesarConfirmacion(family);
+            }, 1000);
         }
-    };
+    });
+}
 
     // Activamos la escucha global en la ventana
     window.addEventListener('storage', handleStorageChange);

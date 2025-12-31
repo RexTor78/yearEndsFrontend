@@ -1,3 +1,29 @@
+// Importar Firebase (vía CDN para no instalar nada)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  databaseURL: "https://villaaccess-73af4-default-rtdb.europe-west1.firebasedatabase.app/" 
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Modificamos tu función grantAccess
+window.grantAccess = function() {
+    console.log("Enviando aprobación a la nube...");
+    
+    // Escribimos en la nube en lugar del localStorage
+    set(ref(db, 'accessControl/adminApproval'), {
+        status: "true",
+        time: Date.now()
+    }).then(() => {
+        const status = document.getElementById("adminStatus");
+        status.innerText = "✅ ACCESO ENVIADO A LA NUBE";
+        status.style.color = "#22c55e";
+    });
+};
+
 const traits = ["comportamiento", "colaboracion", "empatia", "rancio", "fiestero", "alcohol", "extra"];
 const slidersDiv = document.getElementById("sliders");
 

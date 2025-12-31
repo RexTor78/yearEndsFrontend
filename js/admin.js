@@ -23,3 +23,9 @@ document.getElementById("btnGrant").addEventListener("click", () => {
         console.error("Error Firebase:", err);
     });
 });
+function resetContador() {
+    localStorage.setItem("contadorLlegada", "1");
+    localStorage.removeItem("familiasEnCasa"); // Limpiamos la lista de familias dentro
+    localStorage.removeItem("adminApproval");
+    alert("Sistema reseteado: Contador a 1 y Villa vacía de familias.");
+}

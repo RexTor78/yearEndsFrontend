@@ -55,3 +55,12 @@ async function saveScores() {
       alert("Error de conexión con el servidor de puntuaciones.");
   }
 }
+function resetContador() {
+    localStorage.setItem("contadorLlegada", "1");
+    alert("Contador reiniciado. La próxima familia que entre será la Nº 1.");
+}
+
+function concederAcceso() {
+    localStorage.setItem("adminApproval", "true");
+    alert("Acceso enviado al usuario bloqueado.");
+}

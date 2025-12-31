@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentIndex = 0;
   let esSegundoIntento = false;
 
-  // 1. CARGA Y FILTRADO
+  // 1. CARGA Y FILTRADO DE FAMILIAS
   try {
     const response = await fetch("./families.json");
     const data = await response.json();
@@ -34,15 +34,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     familiasRestantes.sort(() => Math.random() - 0.5);
   } catch (e) { console.error("Error JSON", e); }
 
-  // 2. CAPTURA DE FOTO (SOLUCIÓN PREVISUALIZACIÓN)
+  // 2. CAPTURA DE FOTO (ARREGLADO: Previsualización instantánea)
   cameraInput.addEventListener("change", function(e) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        // Asignación directa y forzado de display
+        // Asignamos la imagen y forzamos que se vea ignorando cualquier CSS previo
         preview.src = event.target.result;
-        preview.style.display = "block";
+        preview.style.setProperty("display", "block", "important");
+        
         continueBtn.classList.remove("hidden");
         continueBtn.style.display = "block";
         statusMessage.innerText = "✅ Foto lista.";
@@ -53,11 +54,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   continueBtn.onclick = () => {
-    statusMessage.innerText = "🧠 Analizando...";
+    statusMessage.innerText = "🧠 Analizando rasgos faciales...";
     setTimeout(showPrediction, 1000);
   };
 
-  // 3. PREDICCIÓN CON BLOQUEO EXCLUSIVO (SOLO Nº 3)
+  // 3. PREDICCIÓN (Bloqueo solo en la 3ª)
   function showPrediction() {
     if (familiasRestantes.length === 0) {
       statusMessage.innerText = "⚠️ No hay más familias pendientes.";
@@ -69,10 +70,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (ordenLlegada === 3) {
       confirmNo.style.display = "none";
       confirmYes.innerText = "Solicitar Permiso";
-      modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>Detectados como: ${family.display_name}.<br>Son la 3ª familia, esperen aprobación.`;
+      modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>Detectados como: ${family.display_name}.<br>Son la 3ª familia, esperen aprobación manual.`;
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
-        statusMessage.innerHTML = "<div id='statusBanner' style='background:red; color:white; padding:10px;'>⏳ ESPERANDO ADMINISTRADOR...</div>";
+        statusMessage.innerHTML = "<div id='statusBanner' style='background:red; color:white; padding:15px; border-radius:8px;'>⏳ ESPERANDO ADMINISTRADOR...</div>";
         escucharAdmin(family);
       };
     } else {
@@ -89,9 +90,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     familyModal.classList.remove("hidden");
   }
 
-  // 4. PROCESAR SOSPECHOSO (RUTA BLINDADA)
+  // 4. PROCESAR SOSPECHOSO (RUTA CORREGIDA)
   function procesarConfirmacion(family) {
     familyModal.classList.add("hidden");
+    
     if (family.id === "CanTallaAtalaya") {
       suspiciousImage.style.display = "none";
       suspiciousText.innerHTML = "Acceso concedido. Vigilancia activada por nacionalidad dudosa.";
@@ -102,13 +104,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const sospechoso = family.members.find(m => m.sospechoso === true);
     if (sospechoso && !esSegundoIntento) {
-      // Normalizamos ruta: carpeta_familias / ID_familia / archivo
+      // Limpiamos la ruta del JSON para encontrar la carpeta real
       const nombreFoto = sospechoso.photo.split('/').pop();
       const rutaCorrecta = `family_photos/${family.id}/${nombreFoto}`;
       
       suspiciousImage.src = rutaCorrecta;
-      suspiciousImage.onload = () => { suspiciousImage.style.display = "block"; };
-      suspiciousImage.onerror = () => { suspiciousImage.src = "./" + rutaCorrecta; };
+      suspiciousImage.onload = () => { 
+        suspiciousImage.style.setProperty("display", "block", "important"); 
+      };
       
       suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: No reconocido: ${sospechoso.name}`;
       suspiciousModal.classList.remove("hidden");
@@ -127,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 5. FINALIZAR Y DESCARTAR
+  // 5. FINALIZAR Y DESCARTAR FAMILIA
   function finalizarTodo(family) {
     let orden = parseInt(localStorage.getItem("contadorLlegada") || "1");
     localStorage.setItem("contadorLlegada", (orden + 1).toString());

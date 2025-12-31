@@ -15,89 +15,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   let shuffledFamilies = [];
   let currentIndex = 0;
   let capturedImage = null;
+  let esSegundoIntento = false; // Control para el reintento de foto sospechosa
 
-
+  // 1. CARGA DE DATOS
   try {
     const response = await fetch("./families.json");
     const data = await response.json();
     shuffledFamilies = data.families.sort(() => Math.random() - 0.5);
-  } catch (e) { console.error("Error al cargar JSON"); }
+  } catch (e) { 
+    console.error("Error al cargar JSON"); 
+  }
 
-// Variable global al inicio del archivo para saber si es el segundo intento
-let esSegundoIntento = false;
-
-function procesarConfirmacion(family) {
-    familyModal.classList.add("hidden");
-
-    // 1. CASO ESPECIAL: ATALAYA (Prioridad máxima)
-    if (family.id === "CanTallaAtalaya") {
-        const suspiciousModal = document.getElementById("suspiciousModal");
-        const suspiciousImage = document.getElementById("suspiciousImage");
-        const suspiciousText = document.getElementById("suspiciousText");
-        
-        suspiciousImage.style.display = "none"; 
-        suspiciousText.innerHTML = `
-            <div style="text-align:left; border-left: 4px solid gold; padding-left: 10px;">
-                Se les ha concedido acceso a la villa, pero el sistema ha detectado un integrante de <b>nacionalidad altamente dudosa</b>.<br><br>
-                Para su seguridad y la de todos, tengan en cuenta que <b>serán vigilados</b>.
-            </div>
-        `;
-        
-        document.getElementById("retryBtn").innerText = "Entendido";
-        document.getElementById("excludeBtn").style.display = "none"; 
-
-        suspiciousModal.classList.remove("hidden");
-        document.getElementById("retryBtn").onclick = () => finalizarTodo(family);
-        return;
-    }
-
-    // 2. CASO SOSPECHOSO (Si no es Atalaya y no es el segundo intento)
-    const sospechoso = family.members.find(m => m.sospechoso === true);
-    
-    if (sospechoso && !esSegundoIntento) {
-        const suspiciousModal = document.getElementById("suspiciousModal");
-        const suspiciousImage = document.getElementById("suspiciousImage");
-        const suspiciousText = document.getElementById("suspiciousText");
-
-        // CORRECCIÓN: Aseguramos que la ruta de la foto sea correcta
-        // Si el JSON dice "family_photos/...", y el HTML está en raíz, la ruta es esa.
-        suspiciousImage.src = sospechoso.photo; 
-        suspiciousImage.style.display = "block";
-        suspiciousImage.style.width = "100%"; // Para que se vea bien
-        
-        suspiciousText.innerHTML = `⚠️ <b>ALERTA DE SEGURIDAD</b><br><br>Detectado integrante no reconocido: <b>${sospechoso.name}</b>.`;
-        
-        document.getElementById("retryBtn").innerText = "📸 Repetir Foto";
-        document.getElementById("excludeBtn").style.display = "inline-block";
-        document.getElementById("excludeBtn").innerText = "❌ Dejar fuera";
-        
-        suspiciousModal.classList.remove("hidden");
-
-        // BOTÓN REPETIR: Vuelve a la cámara
-        document.getElementById("retryBtn").onclick = () => {
-            suspiciousModal.classList.add("hidden");
-            preview.style.display = "none";
-            continueBtn.classList.add("hidden");
-            cameraInput.value = ""; // Limpiamos el input para que puedan elegir otra foto
-            esSegundoIntento = true; // Marcamos que la próxima vez pase directo
-            statusMessage.innerHTML = "<b style='color:yellow'>Repitan la selfie sin el integrante no autorizado.</b>";
-        };
-
-        // BOTÓN EXCLUIR: Pasa directo
-        document.getElementById("excludeBtn").onclick = () => {
-            suspiciousModal.classList.add("hidden");
-            finalizarTodo(family);
-        };
-    } else {
-        // 3. CASO LIMPIO O SEGUNDO INTENTO
-        if (esSegundoIntento) {
-            statusMessage.innerHTML = "<b style='color:green'>Análisis correcto. Todos los integrantes autorizados.</b>";
-            setTimeout(() => finalizarTodo(family), 1500);
-        } else {
-            finalizarTodo(family);
-        }
-    }
-}
+  // 2. CAPTURA Y PREVISUALIZACIÓN INICIAL
   cameraInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -107,6 +36,7 @@ function procesarConfirmacion(family) {
         preview.style.display = "block";
         continueBtn.classList.remove("hidden");
         capturedImage = event.target.result;
+        statusMessage.innerText = esSegundoIntento ? "✅ Nueva foto capturada." : "✅ Foto lista.";
       };
       reader.readAsDataURL(file);
     }
@@ -117,30 +47,27 @@ function procesarConfirmacion(family) {
     setTimeout(showPrediction, 1200);
   };
 
+  // 3. PREDICCIÓN Y LÓGICA DE BLOQUEO
   function showPrediction() {
     const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
     let ordenLlegada = parseInt(localStorage.getItem("contadorLlegada") || "1");
 
-
     if (ordenLlegada === 3) {
+      // Bloqueo 3ª Familia
       confirmNo.style.display = "none";
       confirmYes.innerText = "Solicitar Permiso";
-      modalText.innerHTML = `<b style="color:red">ACCESO RESTRINGIDO</b><br><br>Son la 3ª familia. Esperen aprobación del administrador.`;
+      modalText.innerHTML = `<b style="color:red">ACCESO RESTRINGIDO</b><br><br>Son la 3ª familia en llegar. Esperen aprobación del administrador.`;
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
-        statusMessage.innerHTML = "<div class='banner-wait'>⏳ Esperando al administrador...</div>";
+        statusMessage.innerHTML = "<div style='color:orange; font-weight:bold;'>⏳ Esperando al administrador...</div>";
         escucharAdmin(family);
       };
     } else {
-
+      // Flujo Normal
       confirmNo.style.display = "inline-block";
       confirmYes.innerText = "✅ Sí";
       modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
-
-      confirmYes.onclick = () => {
-        procesarConfirmacion(family);
-      };
-
+      confirmYes.onclick = () => procesarConfirmacion(family);
       confirmNo.onclick = () => {
         familyModal.classList.add("hidden");
         currentIndex++;
@@ -150,47 +77,56 @@ function procesarConfirmacion(family) {
     familyModal.classList.remove("hidden");
   }
 
+  // 4. PROCESAR CONFIRMACIÓN (SOSPECHOSOS Y ATALAYA)
   function procesarConfirmacion(family) {
     familyModal.classList.add("hidden");
 
+    // CASO ATALAYA
     if (family.id === "CanTallaAtalaya") {
-      suspiciousImage.style.display = "none"; // No necesitamos foto aquí
-      suspiciousText.innerHTML = `
-                <div style="text-align:left; border-left: 4px solid gold; padding-left: 10px;">
-                Se les ha concedido acceso a la villa, pero el sistema ha detectado un integrante de <b>nacionalidad altamente dudosa</b>.<br><br>
-                Para su seguridad y la de todos, tengan en cuenta que <b>serán vigilados</b>.
-                </div>
-            `;
-      const retryBtn = document.getElementById("retryBtn");
-      const excludeBtn = document.getElementById("excludeBtn");
-
-      retryBtn.innerText = "Entendido";
-      excludeBtn.classList.add("hidden"); // Ocultamos el botón de excluir para Atalaya
-
+      suspiciousImage.style.display = "none";
+      suspiciousText.innerHTML = `Se les ha concedido acceso a la villa, pero el sistema ha detectado un integrante de <b>nacionalidad altamente dudosa</b>. Serán vigilados.`;
+      document.getElementById("retryBtn").innerText = "Entendido";
+      document.getElementById("excludeBtn").style.display = "none";
       suspiciousModal.classList.remove("hidden");
-      retryBtn.onclick = () => finalizarTodo(family);
+      document.getElementById("retryBtn").onclick = () => finalizarTodo(family);
       return;
     }
 
+    // CASO SOSPECHOSO
     const sospechoso = family.members.find(m => m.sospechoso === true);
-    if (sospechoso) {
-      suspiciousImage.src = sospechoso.photo;
+    
+    // Si hay sospechoso y NO es el segundo intento, mostramos modal
+    if (sospechoso && !esSegundoIntento) {
+      // ASIGNACIÓN DE LA FOTO (Aquí está la corrección de ruta)
+      // Como el JS suele estar en /js/ y las fotos en /family_photos/, aseguramos ruta relativa
+      suspiciousImage.src = "./" + sospechoso.photo; 
       suspiciousImage.style.display = "block";
-      suspiciousText.innerHTML = `⚠️ Se a detectado integrante no reconocido. Por favor pueden volver a hacer la foto para su correcta identificacion o dejar al integrante sospechoso fuera. <b>${sospechoso.name}</b>.`;
-
-      document.getElementById("retryBtn").innerText = "📸 Reintentar";
-      document.getElementById("excludeBtn").classList.remove("hidden");
-
+      
+      suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: Integrante no reconocido: <b>${sospechoso.name}</b>.`;
+      
+      document.getElementById("retryBtn").innerText = "📸 Repetir Foto";
+      document.getElementById("excludeBtn").style.display = "inline-block";
+      document.getElementById("excludeBtn").innerText = "❌ Dejar fuera";
+      
       suspiciousModal.classList.remove("hidden");
 
+      // Lógica de Repetir Foto
       document.getElementById("retryBtn").onclick = () => {
         suspiciousModal.classList.add("hidden");
-        statusMessage.innerText = "Reintentando análisis...";
-        setTimeout(() => finalizarTodo(family), 1500);
+        esSegundoIntento = true;
+        // Resetear interfaz para nueva foto
+        preview.style.display = "none";
+        continueBtn.classList.add("hidden");
+        statusMessage.innerHTML = "<b style='color:yellow'>Por favor, repitan la foto sin el sospechoso.</b>";
+        // Desplazar scroll al botón de cámara para ayudar al usuario
+        window.scrollTo(0, 0);
       };
-      document.getElementById("excludeBtn").onclick = () => finalizarTodo(family);
-    } else {
 
+      document.getElementById("excludeBtn").onclick = () => {
+        suspiciousModal.classList.add("hidden");
+        finalizarTodo(family);
+      };
+    } else {
       finalizarTodo(family);
     }
   }
@@ -207,7 +143,7 @@ function procesarConfirmacion(family) {
       if (localStorage.getItem("adminApproval") === "true") {
         clearInterval(interval);
         localStorage.removeItem("adminApproval");
-        procesarConfirmacion(family); // Al aprobar admin, pasamos por los filtros de Atalaya/Sospechoso
+        procesarConfirmacion(family);
       }
     }, 2000);
   }

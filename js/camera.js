@@ -8,29 +8,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     const confirmYes = document.getElementById("confirmYes");
     const confirmNo = document.getElementById("confirmNo");
 
+    const suspiciousModal = document.getElementById("suspiciousModal");
+    const suspiciousImage = document.getElementById("suspiciousImage");
+    const suspiciousText = document.getElementById("suspiciousText");
+    
     let shuffledFamilies = [];
     let currentIndex = 0;
     let capturedImage = null;
 
-    // 1. CARGA DEL JSON (Ruta correcta si el JS está en /js y JSON en raíz)
+ 
     try {
         const response = await fetch("./families.json");
         const data = await response.json();
-        // Mezclamos las familias para que la identificación sea aleatoria
         shuffledFamilies = data.families.sort(() => Math.random() - 0.5);
-    } catch (e) {
-        console.error("Error al cargar familias.json");
-        statusMessage.innerText = "Error cargando base de datos.";
-    }
+    } catch (e) { console.error("Error al cargar JSON"); }
 
-    // 2. PREVISUALIZACIÓN DE FOTO (Arreglado para móvil)
+  
     cameraInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 preview.src = event.target.result;
-                preview.style.display = "block"; // Asegura que se vea
+                preview.style.display = "block";
                 continueBtn.classList.remove("hidden");
                 capturedImage = event.target.result;
             };
@@ -38,88 +38,102 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    // 3. BOTÓN CONTINUAR
     continueBtn.onclick = () => {
         statusMessage.innerText = "🧠 Analizando rasgos faciales...";
         setTimeout(showPrediction, 1200);
     };
 
-    // 4. LÓGICA DE PREDICCIÓN Y ORDEN DE LLEGADA
     function showPrediction() {
         const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
-        
-        // RECUPERAMOS EL ORDEN DE LLEGADA REAL DESDE LOCALSTORAGE
-        // Importante: Este contador marca cuántas familias han confirmado ya (dado al SÍ)
         let ordenLlegada = parseInt(localStorage.getItem("contadorLlegada") || "1");
 
-        // CASO ESPECIAL: Si es la 3ª familia que llega a la casa
+      
         if (ordenLlegada === 3) {
-            modalText.innerHTML = `
-                <div id="adminBanner" style="background: #b91c1c; color: white; padding: 12px; margin-bottom: 10px; border-radius: 8px; font-weight: bold; text-align: center;">
-                    ⚠️ ACCESO RESTRINGIDO
-                </div>
-                Identificados como: <b>${family.display_name}</b>.<br><br>
-                Protocolo: Son la <b>3ª familia</b> del día. Esperen aprobación del administrador.
-            `;
-            confirmNo.style.display = "none"; // Bloqueado, no pueden decir que no
+            confirmNo.style.display = "none";
             confirmYes.innerText = "Solicitar Permiso";
-
+            modalText.innerHTML = `<b style="color:red">ACCESO RESTRINGIDO</b><br><br>Son la 3ª familia. Esperen aprobación del administrador.`;
             confirmYes.onclick = () => {
                 familyModal.classList.add("hidden");
-                statusMessage.innerHTML = `
-                    <div style="background: #b91c1c; color: white; padding: 15px; border-radius: 8px; animation: pulse 2s infinite; font-weight: bold;">
-                        ⏳ Esperando confirmación remota del administrador...
-                    </div>`;
-                
-                sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
+                statusMessage.innerHTML = "<div class='banner-wait'>⏳ Esperando al administrador...</div>";
                 escucharAdmin(family);
             };
         } else {
-            // FLUJO NORMAL PARA EL RESTO (1, 2, 4, 5...)
+         
             confirmNo.style.display = "inline-block";
-            confirmYes.innerText = "✅ Sí, somos nosotros";
-            confirmNo.innerText = "❌ No";
+            confirmYes.innerText = "✅ Sí";
             modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
 
             confirmYes.onclick = () => {
-                // AL CONFIRMAR QUE SÍ ES SU FAMILIA, SUBIMOS EL CONTADOR DE LLEGADA
-                localStorage.setItem("contadorLlegada", (ordenLlegada + 1).toString());
-                
-                sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
-                // Redirigimos a la carpeta pages
-                window.location.href = "pages/trivia.html";
+                procesarConfirmacion(family);
             };
 
             confirmNo.onclick = () => {
                 familyModal.classList.add("hidden");
-                currentIndex++; // El usuario dice que no es esa familia, mostramos otra al azar
+                currentIndex++;
                 setTimeout(showPrediction, 500);
             };
         }
         familyModal.classList.remove("hidden");
     }
 
-    // 5. ESCUCHA AL ADMINISTRADOR
+    function procesarConfirmacion(family) {
+        familyModal.classList.add("hidden");
+
+        if (family.id === "CanTallaAtalaya") {
+            suspiciousImage.style.display = "none"; // No necesitamos foto aquí
+            suspiciousText.innerHTML = `
+                <div style="text-align:left; border-left: 4px solid gold; padding-left: 10px;">
+                Se les ha concedido acceso a la villa, pero el sistema ha detectado un integrante de <b>nacionalidad altamente dudosa</b>.<br><br>
+                Para su seguridad y la de todos, tengan en cuenta que <b>serán vigilados</b>.
+                </div>
+            `;
+            const retryBtn = document.getElementById("retryBtn");
+            const excludeBtn = document.getElementById("excludeBtn");
+            
+            retryBtn.innerText = "Entendido";
+            excludeBtn.classList.add("hidden"); // Ocultamos el botón de excluir para Atalaya
+
+            suspiciousModal.classList.remove("hidden");
+            retryBtn.onclick = () => finalizarTodo(family);
+            return;
+        }
+
+        const sospechoso = family.members.find(m => m.sospechoso === true);
+        if (sospechoso) {
+            suspiciousImage.src = sospechoso.photo;
+            suspiciousImage.style.display = "block";
+            suspiciousText.innerHTML = `⚠️ Detectado integrante no reconocido: <b>${sospechoso.name}</b>.`;
+            
+            document.getElementById("retryBtn").innerText = "📸 Reintentar";
+            document.getElementById("excludeBtn").classList.remove("hidden");
+            
+            suspiciousModal.classList.remove("hidden");
+
+            document.getElementById("retryBtn").onclick = () => {
+                suspiciousModal.classList.add("hidden");
+                statusMessage.innerText = "Reintentando análisis...";
+                setTimeout(() => finalizarTodo(family), 1500);
+            };
+            document.getElementById("excludeBtn").onclick = () => finalizarTodo(family);
+        } else {
+            
+            finalizarTodo(family);
+        }
+    }
+
+    function finalizarTodo(family) {
+        let orden = parseInt(localStorage.getItem("contadorLlegada") || "1");
+        localStorage.setItem("contadorLlegada", (orden + 1).toString());
+        sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
+        window.location.href = "pages/trivia.html";
+    }
+
     function escucharAdmin(family) {
         const interval = setInterval(() => {
             if (localStorage.getItem("adminApproval") === "true") {
                 clearInterval(interval);
                 localStorage.removeItem("adminApproval");
-                
-                // También aumentamos el contador de llegada al ser aprobados
-                let ordenActual = parseInt(localStorage.getItem("contadorLlegada") || "3");
-                localStorage.setItem("contadorLlegada", (ordenActual + 1).toString());
-
-                statusMessage.innerHTML = `
-                    <div style="background: #15803d; color: white; padding: 15px; border-radius: 8px; font-weight: bold;">
-                        ✅ ACCESO CONCEDIDO POR ADMINISTRADOR
-                    </div>`;
-                
-                sessionStorage.setItem("identifiedFamily", JSON.stringify(family));
-                
-                setTimeout(() => { 
-                    window.location.href = "pages/trivia.html"; 
-                }, 2000);
+                procesarConfirmacion(family); // Al aprobar admin, pasamos por los filtros de Atalaya/Sospechoso
             }
         }, 2000);
     }

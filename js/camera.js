@@ -40,18 +40,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (file) {
       console.log("Archivo detectado:", file.name);
       const reader = new FileReader();
-      
+
       reader.onload = (event) => {
         // Asignamos el resultado a la imagen de previsualización
         preview.src = event.target.result;
         preview.style.display = "block"; // Forzamos visibilidad
-        
+
         // Mostramos el botón de continuar
         continueBtn.classList.remove("hidden");
-        continueBtn.style.display = "block"; 
-        
+        continueBtn.style.display = "block";
+
         statusMessage.innerText = "✅ Foto cargada correctamente.";
-        
+
         // Guardamos en sessionStorage para la celebración final
         sessionStorage.setItem("selfie", event.target.result);
       };
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       confirmNo.style.display = "none";
       confirmYes.innerText = "Solicitar Permiso";
       modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>No se ha podido identificar la unidad familiar. Por favor, contacten con el administrador.`;
-      
+
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
         statusMessage.innerHTML = "<div id='statusBanner' style='background:red; color:white; padding:10px; border-radius:5px;'>⏳ ESPERANDO APROBACIÓN DESDE LA NUBE...</div>";
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function procesarConfirmacion(family) {
     familyModal.classList.add("hidden");
-    
+
     // CASO ATALAYA
     if (family.id === "CanTallaAtalaya") {
       suspiciousImage.style.display = "none";
@@ -141,22 +141,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "pages/trivia.html";
   }
 
-  // FUNCIÓN DE ESCUCHA DESDE FIREBASE
   function escucharAdmin(family) {
+    console.log("Conectando con Firebase para esperar aprobación...");
     const approvalRef = ref(db, 'accessControl/adminApproval');
-    onValue(approvalRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.status === "true") {
-            // Limpiamos la nube para el siguiente uso
-            set(ref(db, 'accessControl/adminApproval'), { status: "false" });
 
-            const banner = document.getElementById("statusBanner");
-            if (banner) {
-                banner.style.background = "#15803d";
-                banner.innerText = "✅ PERMISO CONCEDIDO DESDE LA NUBE";
-            }
-            setTimeout(() => { procesarConfirmacion(family); }, 1500);
+    // Usamos onValue pero con una limpieza estricta
+    onValue(approvalRef, (snapshot) => {
+      const data = snapshot.val();
+      console.log("Dato recibido de la nube:", data);
+
+      if (data && data.status === "true") {
+        console.log("¡APROBACIÓN DETECTADA!");
+
+        // 1. Apagamos la señal en la nube inmediatamente
+        set(ref(db, 'accessControl/adminApproval'), { status: "false" });
+
+        // 2. Feedback visual
+        const banner = document.getElementById("statusBanner");
+        if (banner) {
+          banner.style.background = "#15803d";
+          banner.innerText = "✅ ACCESO AUTORIZADO";
         }
+
+        // 3. Saltamos al siguiente paso
+        setTimeout(() => {
+          procesarConfirmacion(family);
+        }, 1000);
+      }
     });
   }
+
 });

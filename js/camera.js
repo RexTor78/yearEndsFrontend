@@ -59,32 +59,45 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // LÓGICA DE PREDICCIÓN
+  // 3. PREDICCIÓN Y LÓGICA DE BLOQUEO
   function showPrediction() {
     const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
+    
+    // Obtenemos el número real de familia que está entrando
     let ordenLlegada = parseInt(localStorage.getItem("contadorLlegada") || "1");
 
+    console.log("Revisando acceso para familia nº:", ordenLlegada);
+
+    // BLOQUEO ÚNICAMENTE PARA LA TERCERA FAMILIA
     if (ordenLlegada === 3) {
-      // Turno 3: Bloqueo y solicitud a la nube
-      confirmNo.style.display = "none";
+      confirmNo.style.display = "none"; // No pueden saltar a otra familia
       confirmYes.innerText = "Solicitar Permiso";
-      modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>No se ha podido identificar la unidad familiar de forma automática. Por favor, contacten con el administrador.`;
+      modalText.innerHTML = `
+        <b style="color:red">ACCESO RESTRINGIDO</b><br><br>
+        Ustedes son la <b>3ª unidad familiar</b> en llegar. Por protocolo, requieren validación manual del administrador.
+      `;
       
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
-        statusMessage.innerHTML = "<div id='statusBanner' style='background:#b91c1c; color:white; padding:15px; border-radius:8px; font-weight:bold;'>⏳ ESPERANDO APROBACIÓN DEL ADMINISTRADOR...</div>";
-        escucharAdmin(family);
+        statusMessage.innerHTML = `
+          <div id="statusBanner" style="background: #b91c1c; color: white; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center;">
+            ⏳ ESPERANDO APROBACIÓN DEL ADMINISTRADOR...
+          </div>`;
+        escucharAdmin(family); // Activa Firebase para que tú les abras
       };
-    } else {
-      // Turnos 1, 2, 4...: Flujo normal
+    } 
+    // PARA TODAS LAS DEMÁS FAMILIAS (1, 2, 4, 5, 6...)
+    else {
       confirmNo.style.display = "inline-block";
       confirmYes.innerText = "✅ Sí, somos nosotros";
       confirmNo.innerText = "❌ No";
       modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
       
       confirmYes.onclick = () => procesarConfirmacion(family);
+      
       confirmNo.onclick = () => {
         familyModal.classList.add("hidden");
-        currentIndex++;
+        currentIndex++; // Probar con otra familia aleatoria
         setTimeout(showPrediction, 400);
       };
     }
@@ -107,25 +120,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // 2. CASO SOSPECHOSO
+    // 2. CASO SOSPECHOSO
     const sospechoso = family.members.find(m => m.sospechoso === true);
     if (sospechoso && !esSegundoIntento) {
-      suspiciousImage.src = window.location.origin + "/" + sospechoso.photo;
-      suspiciousImage.style.display = "block";
-      suspiciousText.innerHTML = `⚠️ <b>ALERTA DE SEGURIDAD</b><br><br>Hemos detectado un integrante no reconocido: <b>${sospechoso.name}</b>.`;
+      // 1. Limpiamos src previo para evitar que se vea la foto de la familia anterior
+      suspiciousImage.src = ""; 
+
+      // 2. Normalizamos la ruta (quitamos slash inicial si existe)
+      let rutaLimpia = sospechoso.photo.replace(/^\//, ''); 
       
-      document.getElementById("retryBtn").innerText = "📸 Repetir Foto";
-      document.getElementById("excludeBtn").style.display = "inline-block";
-      document.getElementById("excludeBtn").innerText = "❌ Dejar fuera";
+      // 3. Intentamos cargar. Usamos la URL completa del sitio para máxima compatibilidad
+      const baseURL = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+      suspiciousImage.src = baseURL + rutaLimpia;
+
+      // Si la ruta anterior falla, el onerror prueba la ruta relativa clásica
+      suspiciousImage.onerror = () => {
+          console.log("Reintentando ruta relativa para:", rutaLimpia);
+          suspiciousImage.src = "./" + rutaLimpia;
+          // Si vuelve a fallar, quitamos el error para no entrar en bucle
+          suspiciousImage.onerror = null; 
+      };
+
+      // 4. Solo mostramos el modal cuando la imagen haya cargado (evita parpadeos)
+      suspiciousImage.onload = () => {
+          suspiciousImage.style.display = "block";
+          suspiciousImage.style.opacity = "1";
+      };
+      
+      suspiciousText.innerHTML = `⚠️ <b>ALERTA DE SEGURIDAD</b><br><br>Integrante no reconocido: <b>${sospechoso.name}</b>.`;
       suspiciousModal.classList.remove("hidden");
 
       document.getElementById("retryBtn").onclick = () => {
-        suspiciousModal.classList.add("hidden");
-        esSegundoIntento = true;
-        preview.style.display = "none";
-        continueBtn.classList.add("hidden");
-        cameraInput.value = ""; 
-        statusMessage.innerHTML = "<b style='color:yellow'>Por favor, repitan la foto sin el integrante no autorizado.</b>";
-        window.scrollTo(0, 0);
+          suspiciousModal.classList.add("hidden");
+          esSegundoIntento = true; // Marcamos para que a la próxima pase
+          preview.style.display = "none";
+          continueBtn.classList.add("hidden");
+          cameraInput.value = ""; // Reset de cámara
+          statusMessage.innerHTML = "<b style='color:yellow'>Repetid la foto sin el sospechoso para entrar.</b>";
       };
 
       document.getElementById("excludeBtn").onclick = () => {

@@ -1,5 +1,5 @@
 // celebration.js
-import { API_URL } from "./config.js";
+import { API_URL } from "../config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const celebrationInput = document.getElementById("celebrationInput");

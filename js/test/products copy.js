@@ -1,4 +1,4 @@
-import { API_URL } from "./config.js";
+import { API_URL } from "../config.js";
 
 const photoBtn = document.getElementById("productPhotoBtn");
 const productInput = document.getElementById("productInput");

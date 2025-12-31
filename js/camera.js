@@ -1,5 +1,15 @@
+// 1. IMPORTACIONES (Siempre arriba en archivos tipo módulo)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  databaseURL: "https://villaaccess-73af4-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1. SELECTORES DE ELEMENTOS
   const cameraInput = document.getElementById("cameraInput");
   const preview = document.getElementById("preview");
   const continueBtn = document.getElementById("continueBtn");
@@ -16,28 +26,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentIndex = 0;
   let esSegundoIntento = false;
 
-  // 2. CARGA DE DATOS (families.json)
+  // CARGA DE DATOS
   try {
     const response = await fetch("./families.json");
     const data = await response.json();
     shuffledFamilies = data.families.sort(() => Math.random() - 0.5);
-    console.log("Datos cargados correctamente");
   } catch (e) {
-    console.error("Error cargando el JSON de familias:", e);
+    console.error("Error cargando familias:", e);
   }
 
-  // 3. EVENTO CÁMARA (CORREGIDO Y TESTEADO)
-  cameraInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
+  // EVENTO CÁMARA (Blindado para previsualización)
+  cameraInput.addEventListener("change", function() {
+    const file = this.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        preview.src = event.target.result;
+      reader.onload = (e) => {
+        preview.src = e.target.result;
         preview.style.display = "block";
         continueBtn.classList.remove("hidden");
-        statusMessage.innerText = "✅ Foto recibida correctamente.";
+        statusMessage.innerText = "✅ Foto capturada correctamente.";
+        // Guardamos la foto para la página final
+        sessionStorage.setItem("selfie", e.target.result);
       };
-      // Verificación estricta del nombre de la función
       reader.readAsDataURL(file);
     }
   });
@@ -47,31 +57,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(showPrediction, 1000);
   };
 
-  // 4. LÓGICA DE PREDICCIÓN
   function showPrediction() {
     const family = shuffledFamilies[currentIndex % shuffledFamilies.length];
     let ordenLlegada = parseInt(localStorage.getItem("contadorLlegada") || "1");
 
     if (ordenLlegada === 3) {
-      // Bloqueo Administrador
       confirmNo.style.display = "none";
       confirmYes.innerText = "Solicitar Permiso";
       modalText.innerHTML = `<b>ACCESO RESTRINGIDO</b><br><br>No se ha podido identificar la unidad familiar. Por favor, contacten con el administrador.`;
       
       confirmYes.onclick = () => {
         familyModal.classList.add("hidden");
-        statusMessage.innerHTML = "<div id='statusBanner' style='background:red; color:white; padding:10px; border-radius:5px;'>⏳ ESPERANDO APROBACIÓN DEL ADMINISTRADOR...</div>";
+        statusMessage.innerHTML = "<div id='statusBanner' style='background:red; color:white; padding:10px; border-radius:5px;'>⏳ ESPERANDO APROBACIÓN DESDE LA NUBE...</div>";
         escucharAdmin(family);
       };
     } else {
-      // Flujo Normal
       confirmNo.style.display = "inline-block";
       confirmYes.innerText = "✅ Sí";
       confirmNo.innerText = "❌ No";
       modalText.innerHTML = `¿Sois la familia <b>${family.display_name}</b>?`;
-      
       confirmYes.onclick = () => procesarConfirmacion(family);
-      
       confirmNo.onclick = () => {
         familyModal.classList.add("hidden");
         currentIndex++;
@@ -81,11 +86,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     familyModal.classList.remove("hidden");
   }
 
-  // 5. PROCESAR CONFIRMACIÓN (ATALAYA Y SOSPECHOSOS)
   function procesarConfirmacion(family) {
     familyModal.classList.add("hidden");
-
-    // Caso Atalaya
+    
+    // CASO ATALAYA
     if (family.id === "CanTallaAtalaya") {
       suspiciousImage.style.display = "none";
       suspiciousText.innerHTML = `Acceso concedido. Detectada nacionalidad dudosa. Serán vigilados estrictamente.`;
@@ -96,16 +100,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Caso Sospechoso
     const sospechoso = family.members.find(m => m.sospechoso === true);
     if (sospechoso && !esSegundoIntento) {
-      // Ruta blindada para la foto
       suspiciousImage.src = window.location.origin + "/" + sospechoso.photo;
       suspiciousImage.style.display = "block";
       suspiciousText.innerHTML = `⚠️ <b>ALERTA</b>: Integrante no reconocido: ${sospechoso.name}`;
-      
-      document.getElementById("retryBtn").innerText = "📸 Repetir Foto";
-      document.getElementById("excludeBtn").style.display = "inline-block";
       suspiciousModal.classList.remove("hidden");
 
       document.getElementById("retryBtn").onclick = () => {
@@ -113,8 +112,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         esSegundoIntento = true;
         preview.style.display = "none";
         continueBtn.classList.add("hidden");
-        cameraInput.value = ""; // Limpiamos para que permita volver a disparar la cámara
-        statusMessage.innerHTML = "<b style='color:yellow'>Por favor, repitan la foto sin el sospechoso.</b>";
+        cameraInput.value = "";
+        statusMessage.innerHTML = "<b style='color:yellow'>Repetid la foto sin el sospechoso.</b>";
       };
       document.getElementById("excludeBtn").onclick = () => finalizarTodo(family);
     } else {
@@ -129,43 +128,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "pages/trivia.html";
   }
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const firebaseConfig = {
-  databaseURL: "https://villaaccess-73af4-default-rtdb.europe-west1.firebasedatabase.app/"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-function escucharAdmin(family) {
-    console.log("Escuchando aprobación desde la nube...");
+  // FUNCIÓN DE ESCUCHA DESDE FIREBASE
+  function escucharAdmin(family) {
     const approvalRef = ref(db, 'accessControl/adminApproval');
-
-    // Firebase nos avisa automáticamente cuando tú cambies el valor
     onValue(approvalRef, (snapshot) => {
         const data = snapshot.val();
         if (data && data.status === "true") {
-            console.log("¡Señal recibida desde el admin!");
-
-            // Limpiamos la señal en la nube para que no se quede abierta
+            // Limpiamos la nube para el siguiente uso
             set(ref(db, 'accessControl/adminApproval'), { status: "false" });
 
             const banner = document.getElementById("statusBanner");
             if (banner) {
                 banner.style.background = "#15803d";
-                banner.innerText = "✅ PERMISO CONCEDIDO";
+                banner.innerText = "✅ PERMISO CONCEDIDO DESDE LA NUBE";
             }
-
-            setTimeout(() => {
-                procesarConfirmacion(family);
-            }, 1000);
+            setTimeout(() => { procesarConfirmacion(family); }, 1500);
         }
     });
-}
-
-    // Activamos la escucha global en la ventana
-    window.addEventListener('storage', handleStorageChange);
-}
+  }
 });

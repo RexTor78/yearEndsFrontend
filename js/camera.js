@@ -129,20 +129,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "pages/trivia.html";
   }
 
-  function escucharAdmin(family) {
-    localStorage.removeItem("adminApproval"); 
-    const interval = setInterval(() => {
-        const approval = localStorage.getItem("adminApproval");
-        if (approval && approval.startsWith("true")) {
-            clearInterval(interval);
-            localStorage.removeItem("adminApproval");
-            const banner = document.getElementById("statusBanner");
-            if (banner) {
-                banner.style.background = "#15803d";
-                banner.innerText = "✅ PERMISO CONCEDIDO";
+function escucharAdmin(family) {
+    console.log("Esperando señal del administrador...");
+
+    // Definimos la función que reaccionará al cambio en el almacenamiento
+    const handleStorageChange = (e) => {
+        if (e.key === "adminApproval" && e.newValue) {
+            try {
+                const data = JSON.parse(e.newValue);
+                if (data.status === "true") {
+                    console.log("¡Señal recibida!");
+                    
+                    // Dejamos de escuchar para no repetir el proceso
+                    window.removeEventListener('storage', handleStorageChange);
+                    
+                    // Feedback visual en la pantalla
+                    const banner = document.getElementById("statusBanner");
+                    if (banner) {
+                        banner.style.background = "#15803d";
+                        banner.innerText = "✅ PERMISO CONCEDIDO";
+                    }
+
+                    // Procedemos
+                    setTimeout(() => {
+                        procesarConfirmacion(family);
+                    }, 1000);
+                }
+            } catch (err) {
+                console.error("Error al procesar la señal del admin", err);
             }
-            setTimeout(() => { procesarConfirmacion(family); }, 1000);
         }
-    }, 800);
-  }
+    };
+
+    // Activamos la escucha global en la ventana
+    window.addEventListener('storage', handleStorageChange);
+}
 });
